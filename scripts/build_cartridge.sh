@@ -5,11 +5,12 @@ picoboots_src_path="$(dirname "$0")/../src"
 picoboots_scripts_path="$(dirname "$0")"
 
 # Define list of paths to engine modules containing constants to substitute at prebuild time,
-# separated by space (Python argparse nargs='*')
+# separated by space (Python argparse nargs='*' allows us to pass them all at once after
+# --game-constant-module-path, but remember to surround each path with escaped quotes)
 # Since engine constants don't depend on game, it's easier to define them here than passing them
 # as arguments like game_constant_module_paths_string_prebuild
-engine_constant_module_paths_string_prebuild="${picoboots_src_path}/engine/application/constants.lua \
-${picoboots_src_path}/engine/render/color_constants.lua"
+engine_constant_module_paths_string_prebuild="\"${picoboots_src_path}/engine/application/constants.lua\" \
+\"${picoboots_src_path}/engine/render/color_constants.lua\""
 
 help() {
   echo "Build .p8 file from a main source file.
@@ -488,9 +489,8 @@ fi
 # ! before replacing strings.
 replace_strings_in_engine_cmd="\"$picoboots_scripts_path/replace_strings.py\" \"$intermediate_path/pico-boots/src\""
 
-if [[ -n "$game_constant_module_paths_string_prebuild" ]] ; then
-  replace_strings_in_engine_cmd+=" --game-constant-module-path $engine_constant_module_paths_string_prebuild"
-fi
+# Python argparse nargs='*' allows us to pass all the engine paths separated by space after --game-constant-module-path
+replace_strings_in_engine_cmd+=" --game-constant-module-path $engine_constant_module_paths_string_prebuild"
 
 echo "> $replace_strings_in_engine_cmd"
 bash -c "$replace_strings_in_engine_cmd"
@@ -515,9 +515,10 @@ replace_strings_in_game_prebuild_cmd="\"$picoboots_scripts_path/replace_strings.
 if [[ -n "$game_substitute_dir_prebuild" ]] ; then
   replace_strings_in_game_prebuild_cmd+=" --game-substitute-table-dir \"$game_substitute_dir_prebuild\""
 fi
-if [[ -n "$game_constant_module_paths_string_prebuild" ]] ; then
-  replace_strings_in_game_prebuild_cmd+=" --game-constant-module-path $game_constant_module_paths_string_prebuild $engine_constant_module_paths_string_prebuild"
-fi
+
+# Python argparse nargs='*' allows us to pass all the game and engine paths separated by space after --game-constant-module-path
+replace_strings_in_game_prebuild_cmd+=" --game-constant-module-path $game_constant_module_paths_string_prebuild $engine_constant_module_paths_string_prebuild"
+
 if [[ -n "$variable_substitutes_prebuild" ]] ; then
   replace_strings_in_game_prebuild_cmd+=" --variable-substitutes $variable_substitutes_prebuild"
 fi
