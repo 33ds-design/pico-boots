@@ -11,6 +11,7 @@ picoboots_scripts_path="$(dirname "$0")"
 # as arguments like game_constant_module_paths_string_prebuild
 engine_constant_module_paths_string_prebuild="\"${picoboots_src_path}/engine/application/constants.lua\" \
 \"${picoboots_src_path}/engine/core/math_enums.lua\" \
+\"${picoboots_src_path}/engine/input/input_enums.lua\" \
 \"${picoboots_src_path}/engine/render/color_constants.lua\""
 
 help() {

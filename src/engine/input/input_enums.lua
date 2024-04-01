@@ -1,3 +1,6 @@
+--#if constants
+--(when using replace_strings, engine constants are replaced directly so this file can be skipped)
+
 button_ids = {
   left = 0,
   right = 1,
@@ -19,4 +22,13 @@ input_modes = {
   native = 0,     -- use pico8 input (or pico8api for utests)
   simulated = 1   -- use hijacking simulated input
 }
+--#endif
+
+--#else
+
+-- dummy statement pretending we're returning a module
+--  to avoid picotool failure on empty file with Travis
+return nil
+
+--(constants)
 --#endif

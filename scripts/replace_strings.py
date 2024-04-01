@@ -51,28 +51,6 @@ ENGINE_SYMBOL_SUBSTITUTE_TABLE = {
     # !! Make sure to update them manually whenever you change an enum,
     # !! as we don't have a Lua parser to directly get values from enums
 
-    # input
-    'button_ids': {
-        'left':     0,
-        'right':    1,
-        'up':       2,
-        'down':     3,
-        'o':        4,
-        'x':        5,
-    },
-
-    'btn_states': {
-        'released':         0,
-        'just_pressed':     1,
-        'pressed':          2,
-        'just_released':    3,
-    },
-
-    'input_modes': {
-        'native':       0,
-        'simulated':    1,
-    },
-
     # ui
     'alignments': {
       'left': 1,
