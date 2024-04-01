@@ -52,6 +52,7 @@ require("engine/core/class")  -- uses nice_dump from dump
 require("engine/core/math")   -- uses nice_dump from dump
 
 -- enums
+require("engine/core/math_enums")
 require("engine/input/input_enums")
 require("engine/ui/ui_enums")
 
