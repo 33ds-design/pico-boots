@@ -1,6 +1,6 @@
 -- generic new metamethod (requires init method)
-local function new(cls, ...)
-  local self = setmetatable({}, cls)  -- cls as instance metatable
+local function new(class, ...)
+  local self = setmetatable({}, class)  -- class as instance metatable
   self:init(...)
   return self
 end
