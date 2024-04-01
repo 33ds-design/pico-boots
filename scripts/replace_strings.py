@@ -39,7 +39,7 @@ GLYPH_TABLE = {
 # prefix of all variable identifiers
 VARIABLE_PREFIX = '$'
 
-# regex patterns
+# Regex patterns
 
 # we still check local module = {} as preparation for defining sub-tables
 module_setup_pattern = re.compile(r"^local \w+ = {}$")
@@ -69,10 +69,22 @@ inline_comment_pattern_end_raw = r'\s*(?:--(?!\[=*\[)(?!\]=*\]).*)?$'
 module_constant_definition_pattern = re.compile(rf'{constant_definition_pattern_start_raw},?{inline_comment_pattern_end_raw}')
 global_constant_definition_pattern = re.compile(rf'{constant_definition_pattern_start_raw}{inline_comment_pattern_end_raw}')
 
-# copied from preprocess.py
+# Patterns below are copied from preprocess.py
+
 # Remember to strip string before testing against pattern
 stripped_full_line_comment_pattern = re.compile(r'^--(?!\[=*\[)(?!\]=*\]).*$')
 
+# Tag to enter a pico8-only block
+# In this script, we just ignore them since replace_strings is done for PICO-8 builds anyway
+# Note: we kept initial \s* from preprocess.py for convenience, but we always test stripped lines
+# in this script anyway
+pico8_start_pattern = re.compile(r"\s*--\[=*\[#pico8")
+
+# Closing tag for pico8-only block
+# In this script, we just ignore them since replace_strings is done for PICO-8 builds anyway
+# Note: we kept initial \s* from preprocess.py for convenience, but we always test stripped lines
+# in this script anyway
+pico8_end_pattern = re.compile(r"\s*--#pico8]=*]")
 
 def on_walk_error(os_error):
     logging.error(f"os.walk failed on {os_error.filename}")
@@ -317,9 +329,13 @@ def parse_module_and_global_constant_definitions_lines(lines_iterable):
                     # ok, finish search
                     break
 
-                # between tables, we ignore blank lines, full comment lines and module setup `local m = {}` lines
-                # (since further `m.member = value` will give us enough info)
-                if line.isspace() or stripped_full_line_comment_pattern.match(line.strip()) or module_setup_pattern.match(line):
+                # between tables, we ignore:
+                # - blank lines
+                # - full comment lines
+                # - pico8 block start/end lines
+                # - module setup `local m = {}` lines (since further `m.member = value` will give us enough info)
+                if line.isspace() or stripped_full_line_comment_pattern.match(line.strip()) or \
+                    pico8_start_pattern.match(line.strip()) or pico8_end_pattern.match(line.strip()) or module_setup_pattern.match(line):
                     continue
 
                 # between tables, we allow global constant definitions (format: `var = value` without ending comma)

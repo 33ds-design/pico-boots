@@ -30,6 +30,24 @@ class TestParsingGameModuleConstantDefinitions(unittest.TestCase):
             )
         )
 
+    def test_parse_module_constant_definition_with_pico8_block(self):
+        # this is important for engines, which tend to define global modules for easy access
+        module_lines = [
+            '--[[#pico8\n',
+            'api = {\n',
+            '  print = print,\n',
+            '}\n',
+            '--#pico8]]\n',
+            '\n',
+            'return nil\n',
+        ]
+        self.assertEqual(replace_strings.parse_module_and_global_constant_definitions_lines(module_lines),
+            (
+                {'api': {'print': 'print'}},
+                {}
+            )
+        )
+
     def test_parse_module_and_global_constant_definitions_lines_single_table(self):
         module_lines = [
             'local camera_data = {\n',
