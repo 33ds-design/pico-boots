@@ -12,6 +12,7 @@ picoboots_scripts_path="$(dirname "$0")"
 engine_constant_module_paths_string_prebuild="\"${picoboots_src_path}/engine/application/constants.lua\" \
 \"${picoboots_src_path}/engine/core/math_enums.lua\" \
 \"${picoboots_src_path}/engine/input/input_enums.lua\" \
+\"${picoboots_src_path}/engine/render/animated_sprite_data_enums.lua\" \
 \"${picoboots_src_path}/engine/render/color_constants.lua\" \
 \"${picoboots_src_path}/engine/ui/ui_enums.lua\""
 
