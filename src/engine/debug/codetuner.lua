@@ -194,10 +194,13 @@ end
 
 local codetuner = {}
 
--- if tuner is disabled, use default value
-function tuned(name, default_value)
-  return default_value
-end
+-- we don't define tuned() in this case anymore to spare even more tokens
+--  in final release builds
+-- if you really need the tuned default values to work even when not using
+--  the full code tuner, uncomment the code below temporarily:
+-- function tuned(name, default_value)
+--   return default_value
+-- end
 
 --#endif
 
