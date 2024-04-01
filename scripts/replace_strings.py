@@ -51,14 +51,6 @@ ENGINE_SYMBOL_SUBSTITUTE_TABLE = {
     # !! Make sure to update them manually whenever you change an enum,
     # !! as we don't have a Lua parser to directly get values from enums
 
-    # ui
-    'alignments': {
-      'left': 1,
-      'horizontal_center': 2,
-      'center': 3,
-      'right': 4,
-    },
-
     # render
     'anim_loop_modes': {
       'freeze_first':  1,

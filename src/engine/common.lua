@@ -53,8 +53,10 @@ require("engine/core/math")   -- uses nice_dump from dump
 
 -- enums
 require("engine/input/input_enums")
+require("engine/ui/ui_enums")
+
+-- other helpers
 require("engine/render/sprite_rotate90")
-require("engine/ui/alignments")
 
 --#if log
 -- Logging is normally a module to assign locally as local logging = ...
