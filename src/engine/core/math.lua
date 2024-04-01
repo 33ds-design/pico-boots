@@ -264,30 +264,13 @@ function vector:to_location()
   return location(flr(self.x / tile_size), flr(self.y / tile_size))
 end
 
--- enums data
-
-directions = {
-  left = 0,
-  up = 1,
-  right = 2,
-  down = 3
-}
+-- dynamic enum mapping (for math enums with constant expressions to substitute, see math_enums.lua)
 
 dir_vectors = {
   [0] = vector(-1, 0),
   vector(0, -1),
   vector(1, 0),
   vector(0, 1)
-}
-
-horizontal_dirs = {
-  left = 1,
-  right = 2
-}
-
-vertical_dirs = {
-  up = 1,
-  down = 2
 }
 
 horizontal_dir_vectors = {

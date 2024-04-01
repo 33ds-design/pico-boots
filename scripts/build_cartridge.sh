@@ -10,6 +10,7 @@ picoboots_scripts_path="$(dirname "$0")"
 # Since engine constants don't depend on game, it's easier to define them here than passing them
 # as arguments like game_constant_module_paths_string_prebuild
 engine_constant_module_paths_string_prebuild="\"${picoboots_src_path}/engine/application/constants.lua\" \
+\"${picoboots_src_path}/engine/core/math_enums.lua\" \
 \"${picoboots_src_path}/engine/render/color_constants.lua\""
 
 help() {

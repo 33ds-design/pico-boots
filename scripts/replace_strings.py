@@ -51,24 +51,6 @@ ENGINE_SYMBOL_SUBSTITUTE_TABLE = {
     # !! Make sure to update them manually whenever you change an enum,
     # !! as we don't have a Lua parser to directly get values from enums
 
-    # math
-    'directions': {
-        'left':  0,
-        'up':    1,
-        'right': 2,
-        'down':  3,
-    },
-
-    'horizontal_dirs': {
-        'left':     1,
-        'right':    2,
-    },
-
-    'vertical_dirs': {
-        'up':     1,
-        'down':    2,
-    },
-
     # input
     'button_ids': {
         'left':     0,
