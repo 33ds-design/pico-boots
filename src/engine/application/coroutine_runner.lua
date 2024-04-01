@@ -57,7 +57,11 @@ function coroutine_runner:update_coroutines()
           -- fallback error when #log is not defined or 'coroutine' category is not logged,
           --  so we can at least see the message in console, which is more readable that the assert message
           --  in PICO-8
+          -- we don't want to pollute busted utests with the error message though, so it is still
+          -- surrounded by #pico8 so it only shows on in the console besides PICO-8 during debug
+--[[#pico8
           printh("[coroutine] error: coroutine_runner:update_coroutines: "..error_msg)
+--#pico8]]
         end
         assert(false, error_msg)
       end
