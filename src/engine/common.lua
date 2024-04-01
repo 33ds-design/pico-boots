@@ -43,11 +43,10 @@ require("engine/application/constants")
 require("engine/render/color_constants")
 require("engine/render/color")
 require("engine/core/helper")
-require("engine/core/stringify")
 --#if tostring
 require("engine/core/string_join")  -- uses stringify from class
+require("engine/debug/dump")        -- uses joinstr_table from string_join
 --#endif
-require("engine/debug/dump")  -- uses joinstr_table from string_join
 require("engine/core/class")  -- uses nice_dump from dump
 require("engine/core/math")   -- uses nice_dump from dump
 

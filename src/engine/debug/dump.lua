@@ -1,5 +1,8 @@
 --#if dump
 
+-- Dependencies:
+-- uses joinstr_table from string_join
+
 --[[
 Ordered table iterator, allow to iterate on the natural order of the keys of a
 table.
