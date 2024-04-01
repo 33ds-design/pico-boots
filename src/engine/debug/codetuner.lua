@@ -185,14 +185,10 @@ function codetuner:render_window()
   self.gui:draw()
 end
 
---#endif
+--#else
 
--- prevent busted from parsing both versions of codetuner
+-- prevent busted from parsing both versions of tuned
 --[[#pico8
-
---#ifn tuner
-
-local codetuner = {}
 
 -- we don't define tuned() in this case anymore to spare even more tokens
 --  in final release builds
@@ -202,8 +198,8 @@ local codetuner = {}
 --   return default_value
 -- end
 
---#endif
-
 --#pico8]]
+
+--#endif
 
 return codetuner
