@@ -9,9 +9,14 @@
 -- (this module body is stripped from build anyway)
 -- note: we must isolate table entries on their own line so replace_strings.py parser works
 
+-- it is important to surround this api.print definition with #pico8
+-- so busted never uses it (it would print in console), and uses the one in pico8api.lua instead
+
+--[[#pico8
 api = {
   print = print,
 }
+--#pico8]]
 
 -- common pico-8 constants
 
