@@ -180,10 +180,21 @@ class TestParsingGameModuleConstantDefinitions(unittest.TestCase):
             )
         )
 
-    def test_parse_module_and_global_constant_invalid_redundant_global_constant(self):
+    def test_parse_global_constant_invalid_redundant_global_constant(self):
         module_lines = [
             'screen_width = 128\n',
             'screen_width = 256\n',
+            '\n',
+            'return nil\n',
+        ]
+        self.assertRaises(ValueError, replace_strings.parse_module_and_global_constant_definitions_lines, module_lines)
+
+    def test_parse_module_constant_invalid_redundant_global_constant(self):
+        module_lines = [
+            'module = {\n'
+            '  screen_width = 128\n',
+            '  screen_width = 256\n',
+            '}\n',
             '\n',
             'return nil\n',
         ]
@@ -215,6 +226,10 @@ class TestParsingVariableSubstitutes(unittest.TestCase):
         test_arg_substitutes = ['itest=character', 'optimization=3']
         self.assertEqual(replace_strings.parse_variable_substitutes(test_arg_substitutes), {'$itest': 'character', '$optimization': '3'})
 
+    def test_parse_variable_substitutes_duplicate_var__error(self):
+        test_arg_substitutes = ['duplicate_var=1', 'duplicate_var=2']
+        self.assertRaises(ValueError, replace_strings.parse_variable_substitutes, test_arg_substitutes)
+
     def test_parse_variable_substitutes_parsing_error(self):
         test_arg_substitutes = ['itest character']
         self.assertRaises(ValueError, replace_strings.parse_variable_substitutes, test_arg_substitutes)
@@ -240,22 +255,16 @@ class TestReplaceAllSymbolsInStrings(unittest.TestCase):
         test_string = 'pico8api.print("hello")'
         self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {}), 'pico8api.print("hello")')
 
-    def test_replace_all_symbols_in_string_enum(self):
-        test_string = 'local a = anim_loop_modes.freeze_first'
-        self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {}), 'local a = 1')
-
     def test_replace_all_symbols_in_string_missing_member(self):
-        test_string = 'local a = anim_loop_modes.unknown'
+        test_string = 'self.state = game_character_states.unknown'
         # this will trigger an error, hidden when testing thx to CRITICAL log level set in __main__
-        self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {}), 'local a = assert(false, "UNSUBSTITUTED anim_loop_modes.unknown")')
+        self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {'game_character_states': {'idle': 1}}),
+                'self.state = assert(false, "UNSUBSTITUTED game_character_states.unknown")')
 
     def test_replace_all_symbols_in_string_game_symbol_substitute(self):
         test_string = 'self.state = game_character_states.idle'
-        self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {'game_character_states': {'idle': 1}}), 'self.state = 1')
-
-    def test_replace_all_symbols_in_string_common_keys_error(self):
-        test_string = 'some code'
-        self.assertRaises(ValueError, replace_strings.replace_all_symbols_in_string, test_string, {'anim_loop_modes': {'my_mode': 0}})
+        self.assertEqual(replace_strings.replace_all_symbols_in_string(test_string, {'game_character_states': {'idle': 1}}),
+                'self.state = 1')
 
 
 class TestReplaceAllValuesInStrings(unittest.TestCase):

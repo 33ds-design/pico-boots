@@ -9,7 +9,7 @@ from collections import OrderedDict
 
 # This script replace glyph identifiers, some functions and symbols in general, and values (constants + $variables)
 # with the corresponding unicode characters and substitute symbol names. It only works on .lua files.
-# Set the glyphs and symbols to replace in GLYPH_TABLE and ENGINE_SYMBOL_SUBSTITUTE_TABLE.
+# Set the glyphs to replace in GLYPH_TABLE.
 # It is possible to add game-specific symbols by defining a GAME_SYMBOL_SUBSTITUTE_TABLE in another file,
 # and game-specific constants by defining a GAME_CONSTANT_SUBSTITUTE_TABLE in that same file 'game_substitute_table.py'
 # (see command-line option --game-substitute-table-dir)
@@ -34,30 +34,6 @@ GLYPH_TABLE = {
     'r': GLYPH_RIGHT,
     'x': GLYPH_X,
     'o': GLYPH_O,
-}
-
-# Functions and enum constants to substitute
-# There are all present in engine, and not specific to any game.
-# Enums are only substituted for token/char limit reasons
-# Format: { namespace1: {name1: substitute1, name 2: substitute2, ...}, ... }
-ENGINE_SYMBOL_SUBSTITUTE_TABLE = {
-    # Enums
-
-    # for every enum added here, surround enum definition with --#ifn pico8
-    #   to strip it from the build, unless you need to map the enum string
-    #   to its value dynamically with enum_values[dynamic_string]
-    # remember to update the values of any preprocessed enum modified
-
-    # !! Make sure to update them manually whenever you change an enum,
-    # !! as we don't have a Lua parser to directly get values from enums
-
-    # render
-    'anim_loop_modes': {
-      'freeze_first':  1,
-      'freeze_last':   2,
-      'clear':         3,
-      'loop':          4,
-    },
 }
 
 # prefix of all variable identifiers
@@ -186,7 +162,7 @@ def generate_get_substitute_from_dict(substitutes):
         else:
             original_symbol = match.group(0)  # "{namespace}.{member}"
             # in general, we should substitute all members of a namespace, especially enums
-            logging.error(f'no substitute defined for {original_symbol}, but the namespace (first part) is present in ENGINE_SYMBOL_SUBSTITUTE_TABLE')
+            logging.error(f'no substitute defined for {original_symbol}, but the namespace (first part) is present in substitutes')
             # return something easy to debug in PICO-8, in case the user missed the error message
             # note that we should normally escape quotes in original_symbol, but we rely on the fact that
             # symbols should not contain quotes
@@ -196,29 +172,15 @@ def generate_get_substitute_from_dict(substitutes):
 
 def replace_all_symbols_in_string(text, game_symbol_substitute_table):
     """
-    Replace symbols "namespace.member" defined in ENGINE_SYMBOL_SUBSTITUTE_TABLE
-    and game_symbol_substitute_table with the corresponding substitutes
+    Replace symbols "namespace.member" defined in game_symbol_substitute_table
+    with the corresponding substitutes
     Convert integer to string for replacement to support enum constants
 
     >>> replace_all_symbols_in_string("api.print(\"hello\")")
     'print("hello")'
 
     """
-    # Merge game and engine tables
-    # Give priority to game symbols by putting them first in order
-    # Python 3.7 makes dict ordered by insertion the rule, but until Python 3.6
-    # it's an implementatin detail, so use OrderedDict to be sure
-
-    # We don't support game symbol override (we prefer putting game table on the left to give
-    # priority in iteration, but then it gets overridden by the engine table)
-    common_keys = game_symbol_substitute_table.keys() & ENGINE_SYMBOL_SUBSTITUTE_TABLE
-    if game_symbol_substitute_table.keys() & ENGINE_SYMBOL_SUBSTITUTE_TABLE:
-        raise ValueError(f"game_symbol_substitute_table has common keys with ENGINE_SYMBOL_SUBSTITUTE_TABLE: {common_keys}")
-
-    # Python 3.9 note: use game_symbol_substitute_table | ENGINE_SYMBOL_SUBSTITUTE_TABLE
-    # since 3.7 guarantees order, and 3.9 introduces the | operator
-    full_symbol_substitutes_table = OrderedDict(**game_symbol_substitute_table, **ENGINE_SYMBOL_SUBSTITUTE_TABLE)
-    for namespace, substitutes in full_symbol_substitutes_table.items():
+    for namespace, substitutes in game_symbol_substitute_table.items():
         # strings like "pico8api.lua" contain namespaces like "api." so make sure to replace with wholeword
         # to avoid replacing unwanted strings (that said, this actually occurred in a comment, only because
         # the preprocess step is not stripping comments anymore)
@@ -427,7 +389,12 @@ def parse_variable_substitutes(variable_substitutes):
             # note that we now inject the prefix directly before the variable name
             # ex: 'itest' => '$itest'
             # this allows us to distinguish '$variables' from 'constants' (without prefix)
-            variable_substitutes_table[VARIABLE_PREFIX + variable] = substitute
+            key = VARIABLE_PREFIX + variable
+
+            if key in variable_substitutes_table:
+                raise ValueError(f"variable_substitutes '{variable_substitutes}' contains duplicate definition of variable '{variable}'")
+
+            variable_substitutes_table[key] = substitute
         else:
             raise ValueError(f"variable_substitutes is not formatted as 'variable=value': '{variable_definition}'")
     return variable_substitutes_table
@@ -473,7 +440,7 @@ Does not support spaces in names because surrounding quotes would be part of the
         game_symbol_substitute_table = game_substitute_table.GAME_SYMBOL_SUBSTITUTE_TABLE
         game_value_substitutes_table = game_substitute_table.GAME_CONSTANT_SUBSTITUTE_TABLE
 
-    # parse constant definitions in the each constant module path
+    # parse constant definitions in the each engine/game constant module path
     # (we should pass engine file paths for engine, engine + game file paths for game)
     # and add them to the game symbol substitute table, since game constants
     # are always namespaced in modules, so should use the symbol "namespace.member"
@@ -484,8 +451,24 @@ Does not support spaces in names because surrounding quotes would be part of the
         # no need to check if is truthy anymore:
         # if there is a parsing failure, we'll immediately raise anyway
         logging.debug(f"Found game module constants in {module_path}: {module_constants}")
+
+        # Note that game and engine symbols are all put together, but we don't support game symbol override
+        # (we prefer putting game table on the left to give priority in iteration, but then it would overridden
+        # by the engine table), so for safety we raise an error if we detect a duplicate key
+        # Collision could also happen if 2 game constant files contain the same definitions
+        common_keys = game_symbol_substitute_table.keys() & module_constants
+        if common_keys:
+            raise ValueError(f"game_symbol_substitute_table has common keys with module_constants: {common_keys}")
+
+        # Merge all module constants together
         game_symbol_substitute_table.update(module_constants)
-        # we also support global constants (defined outside tables), added to the harcoded table
+
+        # Same check for global constants
+        common_keys = game_value_substitutes_table.keys() & global_constants
+        if common_keys:
+            raise ValueError(f"game_value_substitutes_table has common keys with global_constants: {common_keys}")
+
+        # Merge all global constants together
         game_value_substitutes_table.update(global_constants)
 
     # get variable substitutes (those must be prefixed with $ in .lua)
