@@ -22,13 +22,20 @@ function almost_eq(lhs, rhs, eps)
 end
 --#endif
 
+--#if busted
 -- unfortunately // only works with native Lua
---  and \ only works with PICO-8 but picotool doesn't accept it
--- so we use our own function for integer division (you can always post-process it back
---  to \ if you want, or add a short version \ between --[[#pico8 and --#pico8]])
+--  and \ only works with PICO-8 but Luaparse doesn't accept it
+-- so we use our own function for integer division, but strip it unless #busted to spare tokens
+-- if you want to use integer division in production code, you can either:
+--  a. convert `int_div(a, b)` -> `a \ b` by using Regex during post-process
+--  b. manually add a conditional switch --#if busted / --#else containing --[[#pico8 and --#pico8]]
+--     as in sprite_id_location.from_sprite_id more below, where pico8 version uses inlined
+--     `flr(a/b)` (still not `a\b` because LuaParse would be applied after that pre-processing;
+--     only post-processing, post-minify substitution could fix that)
 function int_div(a, b)
   return flr(a/b)
 end
+--#endif
 
 -- geometry/data grid helpers
 -- (defined from dependee to dependent so luamin -G recognizes assigned globals
@@ -211,7 +218,13 @@ end
 
 -- return the sprite id location corresponding to a sprite id
 function sprite_id_location.from_sprite_id(n)
+--#if busted
   return sprite_id_location(n % 16, int_div(n, 16))
+--#else
+--[[#pico8
+  return sprite_id_location(n % 16, flr(n, 16))
+--#pico8]]
+--#endif
 end
 
 -- location is a special tile_vector with the semantics of a tilemap location
