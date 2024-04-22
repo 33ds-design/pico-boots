@@ -5,6 +5,7 @@ local function new(class, ...)
   return self
 end
 
+--#if tostring
 -- generic concat metamethod (requires _tostring method on tables)
 local function concat(lhs, rhs)
   -- SUPERSEDED by tostr(), see comment on stringify above
@@ -13,6 +14,7 @@ local function concat(lhs, rhs)
   --  and tables without __tostring
   return stringify(lhs)..stringify(rhs)
 end
+--#endif
 
 -- return a copy of a struct instance 'self'
 -- this is a simplified version of deepcopy implementations and only support
@@ -112,7 +114,9 @@ Note that most .__eq() definitions are only duck-typing lhs and rhs,
 function new_class()
   local class = {}
   class.__index = class  -- 1st class as instance metatable
+--#if tostring
   class.__concat = concat
+--#endif
 
   setmetatable(class, {
     __call = new
@@ -136,7 +140,9 @@ function derived_class(base_class)
 
   local class = {}
   class.__index = class  -- 1st class as instance metatable
+--#if tostring
   class.__concat = concat
+--#endif
 
   setmetatable(class, {
     __index = base_class,
@@ -168,7 +174,9 @@ end
 function derived_struct(base_struct)
   local derived = {}
   derived.__index = derived
+--#if tostring
   derived.__concat = concat
+--#endif
 
   setmetatable(derived, {
     __index = base_struct,
@@ -184,7 +192,9 @@ end
 function singleton(init)
   local s = {}
   setmetatable(s, {
+--#if tostring
     __concat = concat
+--#endif
   })
   s.init = init
   s:init()
@@ -206,7 +216,9 @@ function derived_singleton(base_singleton, derivedinit)
     -- for the derived_singleton, which would access the base_singleton's attr via __index,
     -- effectively sharing the attr with all the other singletons in that hierarchy!
     __index = base_singleton,
+--#if tostring
     __concat = concat
+--#endif
   })
   function ds:init()
     base_singleton.init(self)
