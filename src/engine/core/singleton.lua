@@ -1,3 +1,5 @@
+--#if singleton
+
 -- create a new singleton from an init method, which can also be used as reset method in unit tests
 -- the singleton is at the same time a class and its own instance
 -- init takes a single `self` parameter
@@ -33,3 +35,12 @@ function derived_singleton(base_singleton, derivedinit)
   ds:init()
   return ds
 end
+
+--#else
+
+-- dummy statement pretending we're returning a module
+--  to avoid picotool failure on empty file with Travis
+return nil
+
+--(singleton)
+--#endif

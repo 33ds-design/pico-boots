@@ -1,5 +1,5 @@
 require("engine/test/bustedhelper")
-require("engine/core/singleton")
+require("engine/core/singleton")  -- already in engine/common, but added for clarity
 
 describe('singleton', function ()
 
