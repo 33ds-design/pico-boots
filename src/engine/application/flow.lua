@@ -1,11 +1,9 @@
-require("engine/core/singleton")
-
 -- flow: module that registers and updates gamestates
 --  it also handles transitions between gamestates, but they must be manually queried
 --  (no condition-based transition)
 -- it relies on gamestate objects, for which an abstract class is defined in gamestate.lua.
 -- you can also pass any table that implements the interface suggested in gamestate.lua, such as
--- a singleton (if you need auto-init and access from anywhere)
+-- a singleton or singleton-like (if you need auto-init and access from anywhere)
 --
 -- we recommend to use the `gameapp` class for big projects, as it handles flow init and update
 --  under a layer of abstraction. you will still need to query gamestate to change state, though.
@@ -31,18 +29,23 @@ require("engine/core/singleton")
 -- [when you want to change state:]
 -- flow:query_gamestate_type("state2")
 
--- flow singleton
+-- flow singleton-like
 -- state vars
 -- curr_state   gamestates     current gamestate
 -- next_state   gamestates     next gamestate, nil if no transition expected
-local flow = singleton(function (self)
+local flow = {}
+
+-- singleton-like pattern (define init and call it)
+function flow:init()
   -- parameters
   self.gamestates = {}
 
   -- state vars
   self.curr_state = nil
   self.next_state = nil
-end)
+end
+
+flow:init()
 
 function flow:update()
   self:check_next_state()

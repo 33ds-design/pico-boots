@@ -1,5 +1,3 @@
-require("engine/core/singleton")
-
 -- module handling player input (keyboard and mouse)
 
 -- mode                    input_modes                      (itest) current input mode
@@ -9,7 +7,10 @@ require("engine/core/singleton")
 --                                                          (simulated mode only)
 -- players_btn_states      {int: {button_ids: btn_states}}  table of dynamic button states, per player index
 --                                                          (updated from btn() or simulated_buttons_down each frame)
-local input = singleton(function (self)
+local input = {}
+
+-- singleton-like pattern (define init and call it)
+function input:init()
 --#if mouse
   self.mouse_active = false
 --#endif
@@ -76,7 +77,9 @@ local input = singleton(function (self)
     end
     self.players_btn_states[i] = tab
   end
-end)
+end
+
+input:init()
 
 local mouse_devkit_address = 0x5f2d
 local cursor_x_stat = 32

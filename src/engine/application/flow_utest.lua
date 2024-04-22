@@ -364,6 +364,6 @@ describe('flow', function ()
 
     end)
 
-  end)  -- (resetting singleton instance after each test)
+  end)  -- (resetting singleton-like instance after each test)
 
 end)
