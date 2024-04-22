@@ -1,3 +1,7 @@
+--#if tostring
+require("engine/core/stringify")
+--#endif
+
 -- generic new metamethod (requires init method)
 local function new(class, ...)
   local self = setmetatable({}, class)  -- class as instance metatable
