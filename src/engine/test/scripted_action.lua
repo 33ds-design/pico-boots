@@ -1,4 +1,4 @@
--- scripted action struct (but we use class because comparing functions only work by reference)
+-- scripted action class
 local scripted_action = new_class()
 
 -- parameters

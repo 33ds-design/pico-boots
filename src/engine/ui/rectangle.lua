@@ -1,6 +1,6 @@
--- rectangle struct: a drawable shape for a filled rectangle
+-- rectangle class: a drawable shape for a filled rectangle
 -- Implements drawable: position member, draw method
-local rectangle = new_struct()
+local rectangle = new_class()
 
 -- position  vector       top-left position to draw the rectangle at
 -- width     int          rectangle width (minimum 1, 1 for a vertical line)

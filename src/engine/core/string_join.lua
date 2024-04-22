@@ -1,7 +1,7 @@
 -- concatenate a sequence of strings or stringables with a separator
 -- embedded nil values won't be ignored, but nils at the end will be
 -- if you need to surround strings with quotes, pass string_converter = nice_dump
---   but be careful not to use that in _tostring if one of the members are class/struct
+--   but be careful not to use that in _tostring if one of the members are classes
 --   themselves, as it may cause infinite recursion on _tostring => nice_dump => _tostring
 function joinstr_table(separator, args, string_converter)
   string_converter = string_converter or stringify

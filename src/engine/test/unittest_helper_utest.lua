@@ -36,20 +36,20 @@ describe('unittest_helper', function ()
     setmetatable(comparable_struct6, comparable_mt_offset)
 
     -- below relies on class
-    -- we create this struct to demonstrate metatable eq usage/non-usage
+    -- we create this class to demonstrate metatable eq usage/non-usage
     --  and we don't want to use math vector to avoid more dependencies
     --  and because vector.__eq is too lightweight and asserts if types
     --  are not compatible instead of returning false
-    member_comparable_struct = new_struct()
+    member_comparable_class = new_class()
 
-    function member_comparable_struct:init(x, y)
+    function member_comparable_class:init(x, y)
       self.x = x
       self.y = y
     end
 
-    function member_comparable_struct.__eq(lhs, rhs)
-      return getmetatable(lhs) == member_comparable_struct and
-      getmetatable(rhs) == member_comparable_struct and
+    function member_comparable_class.__eq(lhs, rhs)
+      return getmetatable(lhs) == member_comparable_class and
+      getmetatable(rhs) == member_comparable_class and
       lhs.x == rhs.x and lhs.y == rhs.y
     end
 
@@ -148,25 +148,25 @@ describe('unittest_helper', function ()
     end)
 
     it('return true if both tables have the same key refs and value contents by defined equality', function ()
-      assert.is_true(are_same({a = "str", t = {e = member_comparable_struct(5, 8)}}, {a = "str", t = {e = member_comparable_struct(5, 8)}}, true))
+      assert.is_true(are_same({a = "str", t = {e = member_comparable_class(5, 8)}}, {a = "str", t = {e = member_comparable_class(5, 8)}}, true))
     end)
     it('assert if we compare with metatable __eq and some values have the same content but differ by type', function ()
-      assert.is_false(are_same({x = 5, y = 8}, member_comparable_struct(5, 8), true))
+      assert.is_false(are_same({x = 5, y = 8}, member_comparable_class(5, 8), true))
     end)
     it('return false if we compare with metatable __eq and some values have the same content but differ by type (deep)', function ()
-      assert.is_false(are_same({a = "str", t = {e = {x = 5, y = 8}}}, {a = "str", t = {e = member_comparable_struct(5, 8)}}, true))
+      assert.is_false(are_same({a = "str", t = {e = {x = 5, y = 8}}}, {a = "str", t = {e = member_comparable_class(5, 8)}}, true))
     end)
     it('return true if we compare raw content and some values have the same content, even if they differ by type (deep)', function ()
-      assert.is_true(are_same({{x = 1, y = 2}, t = {e = {x = 5, y = 8}}}, {member_comparable_struct(1, 2), t = {e = member_comparable_struct(5, 8)}}))
+      assert.is_true(are_same({{x = 1, y = 2}, t = {e = {x = 5, y = 8}}}, {member_comparable_class(1, 2), t = {e = member_comparable_class(5, 8)}}))
     end)
     it('return false if we compare raw content and some values have the same content, but they differ by type at a deep level', function ()
-      assert.is_false(are_same({{x = 1, y = 2}, t = {e = {x = 5, y = 8}}}, {member_comparable_struct(1, 2), t = {e = member_comparable_struct(5, 8)}}, false, true))
+      assert.is_false(are_same({{x = 1, y = 2}, t = {e = {x = 5, y = 8}}}, {member_comparable_class(1, 2), t = {e = member_comparable_class(5, 8)}}, false, true))
     end)
     it('return true if we compare raw content and some values have the same content, even they differ by type at root AND deeper level', function ()
-      assert.is_true(are_same(member_comparable_struct({e = {x = 5, y = 8}}, 14), {x = {e = member_comparable_struct(5, 8)}, y = 14}))
+      assert.is_true(are_same(member_comparable_class({e = {x = 5, y = 8}}, 14), {x = {e = member_comparable_class(5, 8)}, y = 14}))
     end)
     it('return false if we compare raw content and some values have the same content, but they differ by type at a deep level', function ()
-      assert.is_false(are_same(member_comparable_struct({e = {x = 5, y = 8}}, 14), {x = {e = member_comparable_struct(5, 8)}, y = 14}, false, true))
+      assert.is_false(are_same(member_comparable_class({e = {x = 5, y = 8}}, 14), {x = {e = member_comparable_class(5, 8)}, y = 14}, false, true))
     end)
   end)
 

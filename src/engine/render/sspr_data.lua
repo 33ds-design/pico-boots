@@ -1,6 +1,6 @@
--- source rectangle sprite data struct
+-- source rectangle sprite data class
 -- equivalent of sprite_data, but uses sspr for rendering (render method has same interface for compatibility)
-local sspr_data = new_struct()
+local sspr_data = new_class()
 
 -- sx, sy, sw, sh            int, int, int, int  sspr coordinates (source position and dimensions)
 -- pivot                     vector              (0, 0)              reference center to draw (top-left is (0 ,0))

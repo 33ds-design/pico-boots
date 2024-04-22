@@ -14,12 +14,12 @@ function transform(tab, func)
 end
 
 --[[
-usage example with a class/struct as callable:
+usage example with a class as callable:
 
 ```
 require("engine/core/fun_helper")
 
-local pair = new_struct()
+local pair = new_class()
 
 function pair:init(first, second)
   self.first = first

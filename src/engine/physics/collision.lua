@@ -6,8 +6,8 @@ require("engine/core/vector_ext_mirror")
 
 local collision = {}
 
--- axis-aligned bounding box struct
-local aabb = new_struct()
+-- axis-aligned bounding box class
+local aabb = new_class()
 collision.aabb = aabb
 
 -- center   vector  center of the box

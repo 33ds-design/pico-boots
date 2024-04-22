@@ -85,11 +85,12 @@ function codetuner.below(w, dist)
  return w.x, w.y+w.h+(dist or 2)
 end
 
--- todo: use this struct for easier variable handling
--- tuned variable struct, represents a variable to tune in the code tuner
+-- TODO: this class is currently unused! Use this class in create_tuned_var
+-- for easier variable handling
+-- tuned variable class, represents a variable to tune in the code tuner
 -- currently unused, it will replace the free vars in codetuner.tuned_vars
 -- to provide better information (type, range, default value)
-codetuner.tuned_variable = new_struct()
+codetuner.tuned_variable = new_class()
 
 -- name           string   tuned variable identifier
 -- default_value  any      value used for tuned variable if codetuner is inactive

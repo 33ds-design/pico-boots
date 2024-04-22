@@ -1,8 +1,8 @@
 local text_helper = require("engine/ui/text_helper")
 
--- Label struct: container for a text to draw at a given position
+-- Label class: container for a text to draw at a given position
 -- Implements drawable:
-local label = new_struct()
+local label = new_class()
 
 -- text             printable    text content to draw (mainly string or number)
 -- position         vector       position to draw the label at
@@ -31,7 +31,7 @@ end
 --#endif
 
 function label:draw()
-  -- be careful, as label struct prefers POD outline_colour of -1 for no outline,
+  -- be careful, as label class prefers POD outline_colour of -1 for no outline,
   --  while print_with_outline will check for falsy values for no outline
   -- `or nil` is optional since false is also falsy, but clearer
   text_helper.print_aligned(self.text, self.position.x, self.position.y, self.alignment,

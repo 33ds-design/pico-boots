@@ -1,5 +1,5 @@
--- sprite data struct
-local sprite_data = new_struct()
+-- sprite data class
+local sprite_data = new_class()
 
 -- id_loc                    sprite_id_location                      sprite location on the spritesheet
 -- span                      tile_vector         tile_vector(1, 1)   sprite span on the spritesheet

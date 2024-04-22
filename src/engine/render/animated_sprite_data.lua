@@ -3,8 +3,8 @@
 -- for early definition (if using unify, redundant require will be removed)
 require("engine/render/animated_sprite_data_enums")
 
--- struct containing data on animated sprite: sprite references and timing
-local animated_sprite_data = new_struct()
+-- class containing data on animated sprite: sprite references and timing
+local animated_sprite_data = new_class()
 
 -- sprites      {sprite_data|sspr_data}    sequence of sprites to play in order
 -- step_frames  int                        how long a single sprite (step) is displayed, in frames

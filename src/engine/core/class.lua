@@ -20,25 +20,26 @@ local function concat(lhs, rhs)
 end
 --#endif
 
--- return a copy of a struct instance 'self'
+-- return a copy of a class instance 'self' (esp. for struct-like class)
 -- this is a simplified version of deepcopy implementations and only support
---   structs referencing primitive types or structs (at least copy-able tables)
+--   classes referencing primitive types or classes (at least copy-able tables)
 --   with no reference cycle
--- Generally speaking, we recommend to always use copy when initializing a struct value
---   from another, just like you would copy construct in C++ / define struct variable in C#.
--- This will avoid unwanted changes in the source struct when modifying the new one.
+-- Generally speaking, we recommend to always use copy when initializing a class value
+--   from another, just like you would copy construct in C++ / define class variable in C#.
+-- This will avoid unwanted changes in the source class when modifying the new one.
 -- Ex: new_value = source:copy()
 --     new_value.x = 5  -- safe
--- Similarly, functions that return another struct with modified content from an initial struct,
+-- Similarly, functions that return another class with modified content from an initial class,
 -- but that sometimes don't do anything (e.g. clamp) should return `source:copy()`
 -- instead of `source` (or `self:copy()` instead of `self` for methods) when nothing is done.
--- You can exceptionally keep a reference to the source struct table, as you would
+-- You can exceptionally keep a reference to the source class table, as you would
 --   with a const & in C++, but only if you are sure you will not modify it.
--- ! This will not copy struct members set to nil, as there is no way to detect them
---   You should either manually check for optional members, or follow the idea that structs
---   are POD and not use nil as a possible value in your struct members.
+--   In this case, we recommend naming the variable with a marker such as `_ref` to remember it.
+-- ! This will not copy class members set to nil, as there is no way to detect them
+--   You should either manually check for optional members, or follow the idea that classes
+--   are POD and not use nil as a possible value in your class members.
 local function copy(self)
-  -- we can't access the struct type from here so we get it back via getmetatable
+  -- we can't access the class type from here so we get it back via getmetatable
   local copied = setmetatable({}, getmetatable(self))
 
   for key, value in pairs(self) do
@@ -46,7 +47,7 @@ local function copy(self)
 --#if busted
     --[[
     busted uses luaassert spies, which hijack functions by replacing them
-      with tables, so unit tests relying on copying a struct containing a spied function
+      with tables, so unit tests relying on copying a class containing a spied function
       will assert here; so, exceptionally allow shallow copy of those (just use reference to spy)
     A spy is like this:
       {returnvals = {}, callback = [function], clear = [function], calls = {}, called = [function], called_with = [function], revert = [function], returned_with = [function]}
@@ -59,10 +60,10 @@ local function copy(self)
     if type(value) == 'table' and not force_shallow_copy then
 --#if assert
       assert(type(value.copy) == 'function', "value "..nice_dump(value)..
-        " is a table member of a struct but it doesn't have expected copy method, so it's not a struct itself")
+        " is a table member of a class but it doesn't have expected copy method, so it's not a class itself")
 --#endif
-      -- deep copy the struct member itself. never use circular references
-      -- between structs or you'll get an infinite recursion
+      -- deep copy the class member itself. never use circular references
+      -- between classes or you'll get an infinite recursion
       copied[key] = value:copy()
     else
       copied[key] = value
@@ -72,28 +73,24 @@ local function copy(self)
   return copied
 end
 
--- copy assign struct members of 'from' to struct members of 'self'
--- from and to must be struct instances of the same type
--- copy_assign is useful when manipulating a struct instance reference whose content
+-- copy assign class members of 'from' to class members of 'self' (esp. for struct-like class)
+-- from and to must be class instances of the same type
+-- copy_assign is useful when manipulating a class instance reference whose content
 --  must be changed in-place, because the function caller will continue using the same reference
--- Generally speaking, we recommend using copy_assign every time you assign you must copy a struct
---   into an existing target struct, just like you would copy assign in C++ / assign struct in C#.
+-- Generally speaking, we recommend using copy_assign every time you assign you must copy a class
+--   into an existing target class, just like you would copy assign in C++ / assign class in C#.
 -- Ex: target:copy_assign(source)
 --     target.x = 5  -- safe
--- You can exceptionally keep a reference to the source struct table, as you would
+-- You can exceptionally keep a reference to the source class table, as you would
 --   with a const & in C++, but only if you are sure you will not modify it.
--- ! This will not copy struct members set to nil (see same comment for copy)
+-- ! This will not copy class members set to nil (see same comment for copy)
 local function copy_assign(self, from)
-  assert(getmetatable(self) == getmetatable(from), "copy_assign: expected 'self' ("..self..") and 'from' ("..from..") to have the same struct type")
+  assert(getmetatable(self) == getmetatable(from), "copy_assign: expected 'self' ("..self..") and 'from' ("..from..") to have the same class type")
 
   for key, value in pairs(from) do
     if type(value) == 'table' then
---#if assert
-      assert(type(value.copy_assign) == 'function', "value "..stringify(value)..
-        " is a table member of a struct but it doesn't have expected copy_assign method, so it's not a struct itself")
---#endif
-      -- recursively copy-assign the struct members. never use circular references
-      -- between structs or you'll get an infinite recursion
+      -- recursively copy-assign the class members. never use circular references
+      -- between classes that you intend to copy, or you'll get an infinite recursion
       self[key] = value:copy()
     else
       self[key] = value
@@ -109,6 +106,10 @@ Every class should implement
   - if useful for logging, `:_tostring()`
   - if relevant, `.__eq()`
 
+Since .__eq is manually implemented when needed, and copy/copy_assign is always defined,
+there is no difference between classes and structs as found in other languages.
+We simply call "struct-like classes" class that implement .__eq and for which we expect to use copy/copy_assign.
+
 Note that most .__eq() definitions are only duck-typing lhs and rhs,
   so we can compare two instances of different classes (maybe related by inheritance)
   with the same members. slicing will occur when comparing a base instance
@@ -121,6 +122,8 @@ function new_class()
 --#if tostring
   class.__concat = concat
 --#endif
+  class.copy = copy
+  class.copy_assign = copy_assign
 
   setmetatable(class, {
     __call = new
@@ -155,43 +158,6 @@ function derived_class(base_class)
 
   return class
 end
-
--- create a new struct
--- TODO REFACTOR: structs used to differ from classes by automatically implementing member-wise equality,
---  but now there is no difference besides defining copy and copy_assign methods,
---  which classes could use as well. So we should now merge class and struct back together.
-function new_struct()
-  local struct = {}
-  struct.__index = struct  -- 1st struct as instance metatable
---#if tostring
-  struct.__concat = concat
---#endif
-  struct.copy = copy
-  struct.copy_assign = copy_assign
-
-  setmetatable(struct, {
-    __call = new
-  })
-
-  return struct
-end
-
--- create and return a derived struct from a base struct, redefining metamethods for this level
-function derived_struct(base_struct)
-  local derived = {}
-  derived.__index = derived
---#if tostring
-  derived.__concat = concat
---#endif
-
-  setmetatable(derived, {
-    __index = base_struct,
-    __call = new
-  })
-
-  return derived
-end
-
 -- create a new singleton from an init method, which can also be used as reset method in unit tests
 -- the singleton is at the same time a class and its own instance
 -- init takes a single `self` parameter

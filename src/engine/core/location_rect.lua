@@ -1,6 +1,6 @@
--- location_rect struct: representation of a rectangle containing tiles,
+-- location_rect: representation of a rectangle containing tiles,
 --  defined by its integer inclusive boundaries
-local location_rect = new_struct()
+local location_rect = new_class()
 
 -- left      int     i coordinate of top-left tile contained in this rect
 -- top       int     j coordinate of top-left tile contained in this rect

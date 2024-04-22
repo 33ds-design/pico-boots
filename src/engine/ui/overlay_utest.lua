@@ -3,8 +3,8 @@ local overlay = require("engine/ui/overlay")
 
 describe('overlay', function ()
 
-  -- dummy drawable struct for demonstration
-  local dummy_drawable = new_struct()
+  -- dummy drawable class for demonstration
+  local dummy_drawable = new_class()
 
   function dummy_drawable:init(colour)
     self.colour = colour

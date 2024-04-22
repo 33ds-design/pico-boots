@@ -113,9 +113,9 @@ function dump(dumped_value, as_key, level, use_tostring, sorted_keys)
   local repr
 
   if type(dumped_value) == "table" then
-    -- to avoid considering struct/class itself like an instance with _tostring
+    -- to avoid considering class itself like an instance with _tostring
     --  (as they have a _tostring member indeed), check that __index of table is not
-    --  the table itself, a characteristic sign of struct/class
+    --  the table itself, a characteristic sign of class
     if use_tostring and dumped_value._tostring and
         not rawequal(dumped_value.__index, dumped_value) then
       repr = dumped_value:_tostring()

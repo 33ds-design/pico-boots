@@ -1,5 +1,5 @@
--- time trigger struct
-local time_trigger = new_struct()
+-- time trigger class
+local time_trigger = new_class()
 
 -- non-member parameters
 -- time            float time to wait before running callback after last trigger (in seconds by default, in frames if use_frame_unit is true)

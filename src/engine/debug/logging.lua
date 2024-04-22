@@ -9,8 +9,8 @@ local logging = {
   }
 }
 
--- log message struct
-local log_msg = new_struct()
+-- log message class
+local log_msg = new_class()
 logging.log_msg = log_msg
 
 -- level     logging.level  importance level of the message

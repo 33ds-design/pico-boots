@@ -61,6 +61,147 @@ describe('new_class', function ()
     assert.are_equal(-4, dummy_class(-5):get_incremented_value())
   end)
 
+  describe('struct-like', function ()
+
+    -- in pico-boots, a struct is nothing more than a class with simple, copyable members,
+    -- so that copy and copy_assign work as expected
+
+    -- classes below are simply named "struct" to make our intention of testing copy clear
+    -- (and because it was easier to keep the same names from the times where struct was separate from class)
+
+    local struct_with_spied_function = new_class()
+
+    function struct_with_spied_function:init(callback)
+      self.callback = spy.new(callback)  -- to test allowing copy of those
+    end
+
+    local dummy_struct = new_class()
+
+    function dummy_struct:init(value1, value2)
+      self.value1 = value1
+      self.value2 = value2
+    end
+
+    function dummy_struct:_tostring()
+      return "dummy: "..joinstr(", ", self.value1, self.value2)
+    end
+
+    function dummy_struct:get_sum()
+      return self.value1 + self.value2
+    end
+
+    local complex_struct = new_class()
+
+    function complex_struct:init(value1, value2)
+      self.sum = value1 + value2
+      self.sub_struct = dummy_struct(value1, value2)
+    end
+
+    function complex_struct:_tostring()
+      return "complex_struct: "..joinstr(", ", self.sum, self.sub_struct)
+    end
+
+    local invalid_struct = new_class()
+
+    function invalid_struct:init(value)
+      self.table = dummy_class(value)  -- struct should never contain non-struct tables
+    end
+
+    describe('copy', function ()
+
+      it('should return a copy of the struct, with the same content but not the same reference', function ()
+        local dummy = dummy_struct(3, 7)
+        local copied_dummy = dummy:copy()
+
+        assert.are_same(dummy, copied_dummy)  -- are_equal also works, provided __eq is working
+        assert.is_false(rawequal(dummy, copied_dummy))
+      end)
+
+      it('should return a copy of the struct even if it contains a spied function, copying the spy by reference', function ()
+        local s_with_spied_function = struct_with_spied_function(function () end)
+        local copied_s_with_spied_function = s_with_spied_function:copy()
+
+        -- rather than testing are_same, we test for equality by reference of the callback members
+        --   which is stronger (just to show we are using the same spies for convenience)
+        assert.are_equal(s_with_spied_function.callback, copied_s_with_spied_function.callback)
+        assert.is_false(rawequal(s_with_spied_function, copied_s_with_spied_function))
+      end)
+
+      describe('with struct containing struct', function ()
+
+        it('should return a copy of the struct and its struct members, with the same contents but not the same references', function ()
+          local complex = complex_struct(3, 7)
+          local copied_complex = complex:copy()
+
+          assert.are_same(complex, copied_complex)
+          assert.is_false(rawequal(complex, copied_complex))
+          assert.are_same(complex.sub_struct, copied_complex.sub_struct)
+          assert.is_false(rawequal(complex.sub_struct, copied_complex.sub_struct))
+        end)
+
+      end)
+
+    end)
+
+    describe('copy_assign', function ()
+
+      it('should error if self and from have different types', function ()
+        local simple_from = dummy_struct(3, 7)
+        local complex_to = complex_struct(4, 5)
+
+        assert.has_error(function ()
+          complex_to:copy_assign(simple_from)
+        end, "copy_assign: expected 'self' (complex_struct: 9, dummy: 4, 5) and 'from' (dummy: 3, 7) to have the same class type")
+      end)
+
+      it('should assign all the values of `from` to `to`', function ()
+        local from = dummy_struct(3, 7)
+        local to = dummy_struct(99, -99)
+
+        to:copy_assign(from)
+
+        assert.are_same(from, to)  -- are_equal also works, provided __eq is working
+      end)
+
+      describe('with struct containing struct', function ()
+
+        it('should return a copy of the struct and its struct members, with the same contents but not the same references', function ()
+          local from = complex_struct(3, 7)
+          local to = complex_struct(99, -99)
+          -- let's check that a brand new embedded struct is created (the test below with nil also shows that)
+          -- see are_not_equal below
+          local old_sub_struct_ref = to.sub_struct
+
+          to:copy_assign(from)
+
+          assert.are_same(from, to)
+          -- struct equality has been removed by default,
+          --  so we could also check are_not_equal now
+          assert.is_false(rawequal(from, to))
+          assert.are_same(from.sub_struct, to.sub_struct)
+          assert.is_false(rawequal(old_sub_struct_ref, to.sub_struct))
+          assert.is_false(rawequal(from.sub_struct, to.sub_struct))
+        end)
+
+        it('should also work when the embedded value supposed to be a struct is initally nil, by creating a brand new copy of the other value', function ()
+          local from = complex_struct(3, 7)
+          local to = complex_struct(99, -99)
+          to.sub_struct = nil
+
+          to:copy_assign(from)
+
+          assert.are_same(from, to)
+          assert.is_false(rawequal(from, to))
+          assert.are_same(from.sub_struct, to.sub_struct)
+          assert.is_false(rawequal(from.sub_struct, to.sub_struct))
+        end)
+
+      end)
+
+    end)
+
+  end)
+
 end)
 
 describe('derived_class', function ()
@@ -130,199 +271,6 @@ describe('derived_class', function ()
 
     it('should allow access to base class custom method: get_incremented_value', function ()
       assert.are_equal(-4, dummy_derived_class(-5, 45):get_incremented_value())
-    end)
-
-  end)
-
-end)
-
-describe('new_struct', function ()
-
-  local dummy_struct = new_struct()
-
-  function dummy_struct:init(value1, value2)
-    self.value1 = value1
-    self.value2 = value2
-  end
-
-  function dummy_struct:_tostring()
-    return "dummy: "..joinstr(", ", self.value1, self.value2)
-  end
-
-  function dummy_struct:get_sum()
-    return self.value1 + self.value2
-  end
-
-  local complex_struct = new_struct()
-
-  function complex_struct:init(value1, value2)
-    self.sum = value1 + value2
-    self.sub_struct = dummy_struct(value1, value2)
-  end
-
-  function complex_struct:_tostring()
-    return "complex_struct: "..joinstr(", ", self.sum, self.sub_struct)
-  end
-
-  local invalid_struct = new_struct()
-
-  function invalid_struct:init(value)
-    self.table = dummy_class(value)  -- struct should never contain non-struct tables
-  end
-
-  local struct_with_spied_function = new_struct()
-
-  function struct_with_spied_function:init(callback)
-    self.callback = spy.new(callback)  -- to test allowing copy of those
-  end
-
-  it('should create a new struct with init()', function ()
-    local dummy = dummy_struct(3, 7)
-    assert.are_same({3, 7}, {dummy.value1, dummy.value2})
-  end)
-
-  it('should create a new struct with access to methods via __index', function ()
-    local dummy = dummy_struct(3, 7)
-    assert.are_equal(10, dummy:get_sum())
-  end)
-
-  describe('copy', function ()
-
-    it('should error if the struct contains non-struct members at some depth level', function ()
-      assert.has_error(function ()
-        invalid_struct(99):copy()
-      end, "value dummy:99 is a table member of a struct but it doesn't have expected copy method, so it's not a struct itself")
-    end)
-
-    -- bugfix history: +
-    it('should return a copy of the struct, with the same content but not the same reference', function ()
-      local dummy = dummy_struct(3, 7)
-      local copied_dummy = dummy:copy()
-
-      assert.are_same(dummy, copied_dummy)  -- are_equal also works, provided __eq is working
-      assert.is_false(rawequal(dummy, copied_dummy))
-    end)
-
-    it('should return a copy of the struct even if it contains a spied function, copying the spy by reference', function ()
-      local s_with_spied_function = struct_with_spied_function(function () end)
-      local copied_s_with_spied_function = s_with_spied_function:copy()
-
-      -- rather than testing are_same, we test for equality by reference of the callback members
-      --   which is stronger (just to show we are using the same spies for convenience)
-      assert.are_equal(s_with_spied_function.callback, copied_s_with_spied_function.callback)
-      assert.is_false(rawequal(s_with_spied_function, copied_s_with_spied_function))
-    end)
-
-    describe('with struct containing struct', function ()
-
-      it('should return a copy of the struct and its struct members, with the same contents but not the same references', function ()
-        local complex = complex_struct(3, 7)
-        local copied_complex = complex:copy()
-
-        assert.are_same(complex, copied_complex)
-        assert.is_false(rawequal(complex, copied_complex))
-        assert.are_same(complex.sub_struct, copied_complex.sub_struct)
-        assert.is_false(rawequal(complex.sub_struct, copied_complex.sub_struct))
-      end)
-
-    end)
-
-  end)
-
-  describe('copy_assign', function ()
-
-    it('should error if self and from have different types', function ()
-      local simple_from = dummy_struct(3, 7)
-      local complex_to = complex_struct(4, 5)
-
-      assert.has_error(function ()
-        complex_to:copy_assign(simple_from)
-      end, "copy_assign: expected 'self' (complex_struct: 9, dummy: 4, 5) and 'from' (dummy: 3, 7) to have the same struct type")
-    end)
-
-    it('should error if the struct contains non-struct members at some depth level', function ()
-      assert.has_error(function ()
-        invalid_struct(9):copy_assign(invalid_struct(99))
-      end, "value dummy:99 is a table member of a struct but it doesn't have expected copy_assign method, so it's not a struct itself")
-    end)
-
-    it('should assign all the values of `from` to `to`', function ()
-      local from = dummy_struct(3, 7)
-      local to = dummy_struct(99, -99)
-
-      to:copy_assign(from)
-
-      assert.are_same(from, to)  -- are_equal also works, provided __eq is working
-    end)
-
-    describe('with struct containing struct', function ()
-
-      it('should return a copy of the struct and its struct members, with the same contents but not the same references', function ()
-        local from = complex_struct(3, 7)
-        local to = complex_struct(99, -99)
-        -- let's check that a brand new embedded struct is created (the test below with nil also shows that)
-        -- see are_not_equal below
-        local old_sub_struct_ref = to.sub_struct
-
-        to:copy_assign(from)
-
-        assert.are_same(from, to)
-        -- struct equality has been removed by default,
-        --  so we could also check are_not_equal now
-        assert.is_false(rawequal(from, to))
-        assert.are_same(from.sub_struct, to.sub_struct)
-        assert.is_false(rawequal(old_sub_struct_ref, to.sub_struct))
-        assert.is_false(rawequal(from.sub_struct, to.sub_struct))
-      end)
-
-      it('should also work when the embedded value supposed to be a struct is initally nil, by creating a brand new copy of the other value', function ()
-        local from = complex_struct(3, 7)
-        local to = complex_struct(99, -99)
-        to.sub_struct = nil
-
-        to:copy_assign(from)
-
-        assert.are_same(from, to)
-        assert.is_false(rawequal(from, to))
-        assert.are_same(from.sub_struct, to.sub_struct)
-        assert.is_false(rawequal(from.sub_struct, to.sub_struct))
-      end)
-
-    end)
-
-  end)
-
-  describe('dummy_derived struct', function ()
-
-    local dummy_derived_struct = derived_struct(dummy_struct)
-
-    function dummy_derived_struct:init(value1, value2, value3)
-      -- always call .init on base struct, never :init which would set static members
-      dummy_struct.init(self, value1, value2)
-      self.value3 = value3
-    end
-
-    function dummy_derived_struct:_tostring()
-      return "dummy_derived_struct: "..joinstr(", ", self.value1, self.value2, self.value3)
-    end
-
-    function dummy_derived_struct:get_sum()
-      return dummy_struct.get_sum(self) + self.value3
-    end
-
-    it('should create a new struct with init()', function ()
-      local dummy_derived = dummy_derived_struct(3, 7, 9)
-      assert.are_same({3, 7, 9}, {dummy_derived.value1, dummy_derived.value2, dummy_derived.value3})
-    end)
-
-    it('should create a new struct with access to methods via __index (override calling base)', function ()
-      local dummy_derived = dummy_derived_struct(3, 7, 9)
-      assert.are_equal(19, dummy_derived:get_sum())
-    end)
-
-    it('should support instance concatenation', function ()
-      local dummy_derived = dummy_derived_struct(3, 7, 9)
-      assert.are_equal("val: dummy_derived_struct: 3, 7, 9", "val: "..dummy_derived)
     end)
 
   end)

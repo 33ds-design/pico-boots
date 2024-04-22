@@ -34,9 +34,9 @@ end
 -- (defined from dependee to dependent so luamin -G recognizes assigned globals
 --  for later usage)
 
--- vector struct: a pair of pixel coordinates (x, y) that represents a 2d vector
+-- vector class: a pair of pixel coordinates (x, y) that represents a 2d vector
 -- in the space (position, displacement, speed, acceleration...)
-vector = new_struct()
+vector = new_class()
 
 -- x       int     horizontal coordinate in pixels
 -- y       int     vertical   coordinate in pixels
@@ -170,11 +170,11 @@ function vector.zero()
   return vector(0, 0)
 end
 
--- tile_vector struct: a pair of integer coords (i, j) that represents a position
+-- tile_vector class: a pair of integer coords (i, j) that represents a position
 -- on either a spritesheet or a tilemap of 8x8 squares (8 is the "tile size")
 -- for sprite locations and tilemap locations, use sprite_id_location and location resp.
 -- for sprite span (sprite size on the spritesheet), use tile_vector directly
-tile_vector = new_struct()
+tile_vector = new_class()
 
 -- i       int     horizontal coordinate in tile size
 -- j       int     vertical   coordinate in tile size
@@ -196,7 +196,7 @@ end
 
 -- sprite location is a special tile_vector with the semantics of a spritesheet location
 -- and associated conversion methods
-sprite_id_location = derived_struct(tile_vector)
+sprite_id_location = derived_class(tile_vector)
 
 --#if tostring
 function sprite_id_location:_tostring()
@@ -216,7 +216,7 @@ end
 
 -- location is a special tile_vector with the semantics of a tilemap location
 -- and associated conversion methods
-location = derived_struct(tile_vector)
+location = derived_class(tile_vector)
 
 -- custom equality, defined as useful in tilemap algorithms
 function location.__eq(lhs, rhs)
@@ -226,7 +226,7 @@ function location.__eq(lhs, rhs)
   --  or fail on invalid indexing (if the other type is something else)
   -- this is not Lua standard (where default equality compares by ref and at least returns false)
   --  but this is not worse than C (which would not compile on invalid comparison)
-  -- just make sure you always compare struct of the same type, and if using unittest_helper's
+  -- just make sure you always compare class instances of the same type, and if using unittest_helper's
   --  are_same, that you do not `use_mt_equality` unless you are sure the comparison will be valid
   assert(getmetatable(lhs) == location and getmetatable(rhs) == location, "location.__eq: lhs and rhs are not both a location (lhs: "..nice_dump(lhs)..", rhs: "..nice_dump(rhs)..")")
   return lhs.i == rhs.i and lhs.j == rhs.j
