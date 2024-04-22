@@ -3,8 +3,6 @@
 -- init takes a single `self` parameter
 function singleton(init)
   local s = {}
-  setmetatable(s, {
-  })
   s.init = init
   s:init()
   return s
