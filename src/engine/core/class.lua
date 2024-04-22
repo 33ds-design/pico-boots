@@ -43,8 +43,8 @@ local function copy(self)
   local copied = setmetatable({}, getmetatable(self))
 
   for key, value in pairs(self) do
-    local force_shallow_copy = false
 --#if busted
+    local force_shallow_copy = false
     --[[
     busted uses luaassert spies, which hijack functions by replacing them
       with tables, so unit tests relying on copying a class containing a spied function
@@ -56,8 +56,12 @@ local function copy(self)
     if type(value) == 'table' and value.copy == nil and type(value.callback) == 'function' and type(value.called_with) == 'function' then
       force_shallow_copy = true
     end
---#endif
     if type(value) == 'table' and not force_shallow_copy then
+--#else
+--[[#pico8
+    if type(value) == 'table' then
+--#pico8]]
+--#endif
 --#if assert
       assert(type(value.copy) == 'function', "value "..nice_dump(value)..
         " is a table member of a class but it doesn't have expected copy method, so it's not a class itself")
