@@ -25,10 +25,12 @@
 --  in a picotool build, just add a dummy definition here,
 --  but it would still be called *after* the true definition at the bottom
 --  of the built file (only parsing would be done early), so make it
---  unreachable with `if false` (it won't be stripped away)
+--  unreachable with `if nil` (it won't be stripped away)
 -- Note that we use assignment here so technically -G is doing the job
 --  despite require being a global function.
 -- Place this *above* all require calls so they can be minified properly.
+-- It takes some extra tokens but not much
+-- We can always remove this is some final post-process step if we really need to
 if nil then
   require = 0
 end
