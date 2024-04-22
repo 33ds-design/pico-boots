@@ -56,12 +56,17 @@ function contains(tab, searched_value)
   return false
 end
 
+--#if is_empty
+-- (more rarely used, so stripped unless needed)
 -- return true if the table is empty (contrary to #t == 0,
 --  it also supports non-sequence tables)
 -- {nil} is considered empty (we don't care about all() iterating over nil)
+-- Source: https://pico-8.fandom.com/wiki/Next
 function is_empty(tab)
+  -- note that we compare to nil, since 'false' is a legal key
   return next(tab) == nil
 end
+--#endif
 
 -- clear a table
 function clear_table(tab)
