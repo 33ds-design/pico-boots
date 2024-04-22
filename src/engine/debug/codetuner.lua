@@ -1,5 +1,7 @@
 --#if tuner
 
+require("engine/core/singleton")
+
 local wtk = require("wtk/pico8wtk")
 
 --[[

@@ -1,3 +1,5 @@
+require("engine/core/singleton")
+
 local wtk = require("wtk/pico8wtk")
 
 -- base class for debug windows

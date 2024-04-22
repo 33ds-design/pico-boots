@@ -14,6 +14,8 @@
 -- 5. when done, hide the profiler with:
 --       profiler.window:hide()
 
+require("engine/core/singleton")
+
 local debug_window = require("engine/debug/debug_window")
 local wtk = require("wtk/pico8wtk")
 

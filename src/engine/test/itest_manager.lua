@@ -1,3 +1,5 @@
+require("engine/core/singleton")
+
 local input = require("engine/input/input")
 local integration_test = require("engine/test/integration_test")
 local itest_run = require("engine/test/itest_run")

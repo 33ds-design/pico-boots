@@ -1,3 +1,5 @@
+require("engine/core/singleton")
+
 -- flow: module that registers and updates gamestates
 --  it also handles transitions between gamestates, but they must be manually queried
 --  (no condition-based transition)

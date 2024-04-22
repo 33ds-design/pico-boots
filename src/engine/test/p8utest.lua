@@ -1,3 +1,4 @@
+require("engine/core/singleton")
 require("engine/test/unittest_helper")
 
 local p8utest = {}

@@ -1,3 +1,5 @@
+require("engine/core/singleton")
+
 -- module handling player input (keyboard and mouse)
 
 -- mode                    input_modes                      (itest) current input mode

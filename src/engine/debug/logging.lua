@@ -1,5 +1,7 @@
 --#if log
 
+require("engine/core/singleton")
+
 local logging = {
   level = {
     info = 1,     -- show all messages
