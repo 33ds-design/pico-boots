@@ -163,7 +163,9 @@ end
 function new_struct()
   local struct = {}
   struct.__index = struct  -- 1st struct as instance metatable
+--#if tostring
   struct.__concat = concat
+--#endif
   struct.copy = copy
   struct.copy_assign = copy_assign
 
