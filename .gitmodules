@@ -1,3 +1,4 @@
 [submodule "src/wtk"]
 	path = src/wtk
 	url = https://github.com/hsandt/PICO8-WTK.git
+	branch = pico8api

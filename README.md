@@ -364,13 +364,11 @@ If you use the scripts of this project to create a new game, in order to use `./
 
 ### PICO8-WTK
 
-[PICO8-WTK](https://github.com/Saffith/PICO8-WTK) has been integrated as a submodule. I use my own fork with a special branch [cleam\n-lua](https://github.com/hsandt/PICO8-WTK/tree/clean-lua), itself derived from the branch [p8tool](https://github.com/hsandt/PICO8-WTK/tree/p8tool).
+[PICO8-WTK](https://github.com/Saffith/PICO8-WTK) has been integrated as a submodule. We use the [pico8api branch](https://github.com/hsandt/PICO8-WTK/tree/pico8api), which combines the features of the `p8tool` and `clean-lua` branches:
 
-* Branch `p8tool` is dedicated to p8tool integration. It exports variables instead of defining global variables to fit the require pattern.
-
-* Branch `clean-lua` is dedicated to replacing PICO-8 preprocessed expressions like `+=` and `if (...)` with vanilla Lua equivalents. Unfortunately we need this to use external testing libraries running directly on Lua 5.3.
-
-I will soon update WTK to benefit from the new `new` API and features.
+* Exports variables as a module table (via `return wtk`) instead of defining globals, to fit the `require` pattern.
+* Replaces PICO-8 preprocessed expressions like `+=` and `if (...)` with vanilla Lua equivalents for compatibility with external testing libraries running on Lua 5.3.
+* Adds `vertical_layout` and `label.compute_size` extensions used by pico-boots.
 
 ## Test third-party libraries
 

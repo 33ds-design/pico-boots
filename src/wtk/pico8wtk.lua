@@ -1,22 +1,33 @@
+local wtk = {}
+local widget
+local gui_root
+local panel
+local vertical_layout
+local label
+local icon
+local button
+local spinner
+local spinbtn
+local checkbox
+local rbgroup
+local radio
+local color_picker
 -- utils
-
-function draw_convex_frame(x0, y0, x1, y1, c)
+local function draw_convex_frame(x0, y0, x1, y1, c)
  rectfill(x0, y0, x1, y1, c)
  line(x0, y0, x0, y1-1, 7)
  line(x0, y0, x1-1, y0, 7)
  line(x0+1, y1, x1, y1, 5)
  line(x1, y0+1, x1, y1, 5)
 end
-
-function draw_concave_frame(x0, y0, x1, y1, c)
+local function draw_concave_frame(x0, y0, x1, y1, c)
  rectfill(x0, y0, x1, y1, c)
  line(x0, y0, x0, y1-1, 5)
  line(x0, y0, x1-1, y0, 5)
  line(x0+1, y1, x1, y1, 7)
  line(x1, y0+1, x1, y1, 7)
 end
-
-function make_label(val)
+local function make_label(val)
  local t=type(val)
  if t=="number" then
   return icon.new(val)
@@ -33,17 +44,13 @@ function make_label(val)
   return val
  end
 end
-
-function subwidget(t)
+local function subwidget(t)
  t.__index=t
  setmetatable(t, { __index=widget })
 end
-
-function dummy()
+local function dummy()
 end
-
 -- base widget
-
 widget={
  x=0, y=0,
  w=0, h=0,
@@ -58,13 +65,11 @@ widget={
  on_mouse_move=dummy
 }
 widget.__index=widget
-
 function widget.new()
  local w={ children={} }
  setmetatable(w, widget)
  return w
 end
-
 function widget:draw_all(px, py)
  if self.visible then
   self:draw(px, py)
@@ -73,64 +78,65 @@ function widget:draw_all(px, py)
   end
  end
 end
-
 function widget:update_all()
  self:update()
  for c in all(self.children) do
   c:update_all()
  end
 end
-
 function widget:add_child(c, x, y)
- if c.parent then c.parent:remove_child(c) end
+ if c.parent then
+  c.parent:remove_child(c)
+ end
  c.x=x
  c.y=y
  c.parent=self
  add(self.children, c)
 end
-
 function widget:remove_child(c)
  del(self.children, c)
  c.parent=nil
 end
-
 function widget:find(n)
- if self.name==n then return self end
+ if self.name==n then
+  return self
+ end
  for c in all(self.children) do
   local w=c:find(n)
-  if w then return w end
+  if w then
+   return w
+  end
  end
 end
-
 function widget:get_under_mouse(x, y)
- if not self.visible then return nil end
-
+ if not self.visible then
+  return nil
+ end
  x=x-self.x
  y=y-self.y
  if x>=0 and x<self.w and y>=0 and y<self.h then
   local ret=nil
-  if self.wants_mouse then ret=self end
+  if self.wants_mouse then
+   ret=self
+  end
   for c in all(self.children) do
    local mc=c:get_under_mouse(x, y)
-   if mc then ret=mc end
+   if mc then
+    ret=mc
+   end
   end
   return ret
  end
 end
-
 function widget:abs_x()
  return self.parent:abs_x()+self.x
 end
-
 function widget:abs_y()
  return self.parent:abs_y()+self.y
 end
-
 -- gui root
-
 gui_root={}
 subwidget(gui_root)
-
 function gui_root.new()
  local g=widget.new()
  setmetatable(g, gui_root)
@@ -141,14 +147,12 @@ function gui_root.new()
  g.lastbt=0
  return g
 end
-
 function gui_root:update()
  local x=stat(32)
  local y=stat(33)
  local dx=x-self.lastx
  local dy=y-self.lasty
  local bt=band(stat(34), 1)==1
-
  local wum=self:get_under_mouse(x, y)
  if wum~=self.widget_under_mouse then
   if self.widget_under_mouse then
@@ -159,12 +163,12 @@ function gui_root:update()
    wum:on_mouse_enter()
   end
  end
-
  if dx~=0 or dy~=0 then
   local w=self.clicked_widget or self.widget_under_mouse
-  if w then w:on_mouse_move(dx, dy) end
+  if w then
+   w:on_mouse_move(dx, dy)
+  end
  end
-
  if self.lastbt then
   if not bt and self.clicked_widget then
    self.clicked_widget:on_mouse_release()
@@ -176,16 +180,13 @@ function gui_root:update()
    self.clicked_widget:on_mouse_press()
   end
  end
-
  self.lastx=x
  self.lasty=y
  self.lastbt=bt
-
  for c in all(self.children) do
   c:update_all()
  end
 end
-
 function gui_root:draw()
  if self.visible then
   for c in all(self.children) do
@@ -193,7 +194,6 @@ function gui_root:draw()
   end
  end
 end
-
 function gui_root:mouse_blocked()
  if self.visible then
   local x=stat(32)
@@ -206,20 +206,15 @@ function gui_root:mouse_blocked()
  end
  return false
 end
-
 function gui_root:abs_x()
  return self.x
 end
-
 function gui_root:abs_y()
  return self.y
 end
-
 -- panel
-
 panel={ wants_mouse=true }
 subwidget(panel)
-
 function panel.new(w, h, c, d, s)
  local p=widget.new()
  setmetatable(p, panel)
@@ -227,18 +222,20 @@ function panel.new(w, h, c, d, s)
  p.h=h or 5
  p.c=c or 6
  p.style=s or 1
- if d then p.draggable=true end
+ if d then
+  p.draggable=true
+ end
  return p
 end
-
 function panel:add_child(c, x, y)
  local ex=2
- if self.style==3 then ex=1 end
+ if self.style==3 then
+  ex=1
+ end
  self.w=max(self.w, x+c.w+ex)
  self.h=max(self.h, y+c.h+ex)
  widget.add_child(self, c, x, y)
 end
-
 function panel:draw(x, y)
  if self.style==1 then
   draw_convex_frame(x, y, x+self.w-1, y+self.h-1, self.c)
@@ -248,27 +245,63 @@ function panel:draw(x, y)
   rectfill(x, y, x+self.w-1, y+self.h-1, self.c)
  end
 end
-
 function panel:on_mouse_press()
- if self.draggable then self.drag=true end
+ if self.draggable then
+  self.drag=true
+ end
 end
-
 function panel:on_mouse_release()
  self.drag=false
 end
-
 function panel:on_mouse_move(dx, dy)
  if self.drag then
   self.x=self.x+dx
   self.y=self.y+dy
  end
 end
-
+-- vertical_layout
+vertical_layout={}
+subwidget(vertical_layout)
+function vertical_layout.new(w, c, padding)
+ local vl=widget.new()
+ setmetatable(vl, vertical_layout)
+ vl.w=w or 5
+ vl.h=0
+ vl.c=c or 6
+ vl.padding=padding or 1
+ return vl
+end
+function vertical_layout:add_child(c)
+ local y
+ if #self.children == 0 then
+  y=0
+ else
+  local last_child = self.children[#self.children]
+  y=last_child.y+last_child.h+self.padding
+  self.h=self.h+self.padding
+ end
+ self.w=max(self.w, c.w)
+ self.h=self.h+c.h
+ widget.add_child(self, c, 0, y)
+end
+function vertical_layout:draw(x, y)
+ rectfill(x, y, x+self.w-1, y+self.h-1, self.c)
+end
+function vertical_layout:remove_child(c)
+ local after_c=false
+ for v in all(self.children) do
+  if after_c then
+   v.y=v.y-c.h-self.padding
+  elseif v == c then
+    after_c=true
+  end
+ end
+ self.h=self.h-c.h-self.padding
+ widget.remove_child(self, c)
+end
 -- label
-
 label={}
 subwidget(label)
-
 function label.new(text, c, func)
  local l=widget.new()
  setmetatable(l, label)
@@ -279,36 +312,31 @@ function label.new(text, c, func)
  end
  if type(text)=="function" then
   l.text=text
-  local ret=text(l)
-  l.w, l.h = label.compute_size(""..ret)
+  l.w,l.h=label.compute_size(""..text(l))
  else
   l.text=""..text
-  l.w, l.h = label.compute_size(l.text)
+  l.w,l.h=label.compute_size(text)
  end
  return l
 end
-
 function label.compute_size(text)
- local text_str = ""..text
- local lines = 1
- local max_w = 0
- local current_w = 0
- for i = 1, #text_str do
-  local ch = text_str:sub(i, i)
-  if ch == "\n" then
-   lines = lines + 1
-   current_w = 0
+ local nb_lines=1
+ local nb_chars=0
+ local max_nb_chars=0
+ for i=1, #text do
+  if sub(text, i, i) == "\n" then
+   nb_lines=nb_lines+1
+   max_nb_chars=max(max_nb_chars, nb_chars)
+   nb_chars=0
   else
-   current_w = current_w + 1
-   local w = current_w * 4 - 1
-   if w > max_w then max_w = w end
+   nb_chars=nb_chars+1
   end
  end
- if max_w < 0 then max_w = 0 end
- local h = 5 + (lines - 1) * 6
- return max_w, h
+ max_nb_chars=max(max_nb_chars, nb_chars)
+ local w = max(max_nb_chars*4-1, 0)
+ local h = nb_lines*6-1
+ return w, h
 end
-
 function label:draw(x, y)
  if(type(self.text)=="string") then
   print(self.text, x, y, self.c)
@@ -316,16 +344,12 @@ function label:draw(x, y)
   print(""..self.text(self), x, y, self.c)
  end
 end
-
 function label:on_mouse_press()
  self.func(self)
 end
-
 -- icon
-
 icon={}
 subwidget(icon)
-
 function icon.new(n, t, f)
  local i=widget.new()
  setmetatable(i, icon)
@@ -339,7 +363,6 @@ function icon.new(n, t, f)
  end
  return i
 end
-
 function icon:draw(x, y)
  palt()
  palt(0, false)
@@ -353,16 +376,12 @@ function icon:draw(x, y)
  end
  palt()
 end
-
 function icon:on_mouse_press()
  self.func(self)
 end
-
 -- button
-
 button={ wants_mouse=true }
 subwidget(button)
-
 function button.new(lbl, func, c)
  local b=widget.new()
  setmetatable(b, button)
@@ -374,7 +393,6 @@ function button.new(lbl, func, c)
  b.func=func
  return b
 end
-
 function button:draw(x, y)
  if self.clicked and self.under_mouse then
   draw_concave_frame(x, y, x+self.w-1, y+self.h-1, self.c)
@@ -382,34 +400,26 @@ function button:draw(x, y)
   draw_convex_frame(x, y, x+self.w-1, y+self.h-1, self.c)
  end
 end
-
 function button:on_mouse_enter()
  self.under_mouse=true
 end
-
 function button:on_mouse_exit()
  self.under_mouse=false
 end
-
 function button:on_mouse_press()
  self.clicked=true
 end
-
 function button:on_mouse_release()
  self.clicked=false
  if self.under_mouse then
   self.func(self)
  end
 end
-
 -- spinner
-
 spinner={}
 subwidget(spinner)
-
 spinbtn={ wants_mouse=true }
 subwidget(spinbtn)
-
 function spinner.new(minv, maxv, v, step, f)
  local s=widget.new()
  setmetatable(s, spinner)
@@ -426,12 +436,10 @@ function spinner.new(minv, maxv, v, step, f)
  s:add_child(b, 46, 0)
  return s
 end
-
 function spinner:draw(x, y)
  rectfill(x, y, x+self.w-1, y+self.h-1, 7)
  print(self.value, x+2, y+2, 0)
 end
-
 function spinner:adjust(amt)
  self.value=mid(
   self.value+amt*self.step,
@@ -440,7 +448,6 @@ function spinner:adjust(amt)
   self.func(self)
  end
 end
-
 function spinbtn.new(t, p, s)
  local b=widget.new()
  setmetatable(b, spinbtn)
@@ -452,7 +459,6 @@ function spinbtn.new(t, p, s)
  b.timer=0
  return b
 end
-
 function spinbtn:draw(x, y)
  if self.clicked and self.under_mouse then
   draw_concave_frame(x, y, x+self.w-1, y+self.h-1, 6)
@@ -461,9 +467,10 @@ function spinbtn:draw(x, y)
  end
  print(self.text, x+2, y+2, 1)
 end
-
 function spinbtn:update()
- if self.timer<200 then self.timer=self.timer+1 end
+ if self.timer<200 then
+  self.timer=self.timer+1
+ end
  if self.clicked and self.under_mouse then
   if self.timer>=200 then
    self.parent:adjust(self.sign*500)
@@ -474,32 +481,24 @@ function spinbtn:update()
   end
  end
 end
-
 function spinbtn:on_mouse_enter()
  self.under_mouse=true
 end
-
 function spinbtn:on_mouse_exit()
  self.under_mouse=false
 end
-
 function spinbtn:on_mouse_press()
  self.clicked=true
  self.timer=0
-
  local p=self.parent
  self.parent:adjust(self.sign)
 end
-
 function spinbtn:on_mouse_release()
  self.clicked=false
 end
-
 -- checkbox
-
 checkbox={ wants_mouse=true }
 subwidget(checkbox)
-
 function checkbox.new(lbl, v, f)
  local c=widget.new()
  setmetatable(c, checkbox)
@@ -511,7 +510,6 @@ function checkbox.new(lbl, v, f)
  c.func=f
  return c
 end
-
 function checkbox:draw(x, y)
  rectfill(x, y, x+4, y+4, 7)
  if self.value then
@@ -519,22 +517,17 @@ function checkbox:draw(x, y)
   line(x+1, y+3, x+3, y+1, 0)
  end
 end
-
 function checkbox:on_mouse_press()
  self.value=not self.value
  if self.func then
   self.func(self)
  end
 end
-
 -- radio button
-
 radio={ wants_mouse=true }
 subwidget(radio)
-
 rbgroup={}
 rbgroup.__index=rbgroup
-
 function rbgroup.new(f)
  local g=widget.new()
  setmetatable(g, rbgroup)
@@ -542,12 +535,10 @@ function rbgroup.new(f)
  g.btns={}
  return g
 end
-
 function rbgroup:select(val)
  if self.selected then
   self.selected.selected=false
  end
-
  self.selected=nil
  for r in all(self.btns) do
   if r.value==val then
@@ -556,12 +547,10 @@ function rbgroup:select(val)
    break
   end
  end
-
  if self.func then
   self.func(self.selected)
  end
 end
-
 function radio.new(grp, lbl, val)
  local r=widget.new()
  setmetatable(r, radio)
@@ -575,23 +564,18 @@ function radio.new(grp, lbl, val)
  add(grp.btns, r)
  return r
 end
-
 function radio:on_mouse_press()
  self.group:select(self.value)
 end
-
 function radio:draw(x, y)
  circfill(x+2, y+2, 2, 7)
  if self.selected then
   circfill(x+2, y+2, 1, 0)
  end
 end
-
 -- color picker
-
 color_picker={ wants_mouse=true }
 subwidget(color_picker)
-
 function color_picker.new(sel, func)
  local c=widget.new()
  setmetatable(c, color_picker)
@@ -601,21 +585,17 @@ function color_picker.new(sel, func)
  c.value=sel
  return c
 end
-
 function color_picker:draw(x, y)
  pal()
  palt(0, false)
-
  rect(x, y, x+17, y+17, 0)
  x=x+1
  y=y+1
-
  for c=0, 15 do
   local cx=x+(c%4)*4
   local cy=y+band(c, 12)
   rectfill(cx, cy, cx+3, cy+3, c)
  end
-
  if self.value then
   local cx=x+(self.value%4)*4
   local cy=y+band(self.value, 12)
@@ -623,84 +603,29 @@ function color_picker:draw(x, y)
   rect(cx-1, cy-1, cx+4, cy+4, 7)
  end
 end
-
 function color_picker:on_mouse_press()
- -- it would probably make more
- -- sense to take the position
- -- as arguments, but this will
- -- do...
  local mx=stat(32)-self:abs_x()-1
  local my=stat(33)-self:abs_y()-1
  local cx=flr(mx/4)
  local cy=flr(my/4)
  if cx>=0 and cx<4 and cy>=0 and cy<4 then
   self.value=cy*4+cx
-  if self.func then self.func(self) end
- end
-end
-
--- vertical_layout (pico-boots extension)
-
-vertical_layout={}
-subwidget(vertical_layout)
-
-function vertical_layout.new(w, c, padding)
- local vl=widget.new()
- setmetatable(vl, vertical_layout)
- vl.w=w
- vl.h=0
- vl.c=c
- vl.padding=padding or 1
- return vl
-end
-
-function vertical_layout:add_child(c)
- if #self.children > 0 then
-  self.h = self.h + self.padding
- end
- widget.add_child(self, c, 0, self.h)
- self.h = self.h + c.h
- if c.w > self.w then
-  self.w = c.w
- end
-end
-
-function vertical_layout:remove_child(c)
- widget.remove_child(self, c)
- del(self.children, c)
- self.h = 0
- local first = true
- for child in all(self.children) do
-  if not first then
-   self.h = self.h + self.padding
+  if self.func then
+   self.func(self)
   end
-  first = false
-  child.y = self.h
-  self.h = self.h + child.h
  end
 end
-
-function vertical_layout:draw(x, y)
- rectfill(x, y, x+self.w-1, y+self.h-1, self.c)
-end
-
-return {
- draw_convex_frame = draw_convex_frame,
- draw_concave_frame = draw_concave_frame,
- make_label = make_label,
- subwidget = subwidget,
- dummy = dummy,
- widget = widget,
- gui_root = gui_root,
- panel = panel,
- label = label,
- icon = icon,
- button = button,
- spinner = spinner,
- spinbtn = spinbtn,
- checkbox = checkbox,
- rbgroup = rbgroup,
- radio = radio,
- color_picker = color_picker,
- vertical_layout = vertical_layout,
-}
+-- export
+wtk.widget = widget
+wtk.gui_root = gui_root
+wtk.panel = panel
+wtk.vertical_layout = vertical_layout
+wtk.label = label
+wtk.icon = icon
+wtk.button = button
+wtk.spinner = spinner
+wtk.checkbox = checkbox
+wtk.rbgroup = rbgroup
+wtk.radio = radio
+wtk.color_picker = color_picker
+return wtk
