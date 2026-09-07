@@ -17,7 +17,7 @@ class TestMinify(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_extract_lua(self):
-        # We actually test p8tool listrawlua
+        # We actually test p8tool listlua
         cartridge_content = """pico-8 cartridge // http://www.pico-8.com
 version 27
 __lua__
@@ -40,7 +40,7 @@ __music__
 
 """
 
-        # p8tool adds an extra line after each line, but we ignore them in extract_lua already
+        # p8tool listlua outputs the lua code with a trailing newline
         expected_extracted_code = """local a = 5
 local s = [[
 text
@@ -59,7 +59,7 @@ text
             self.assertEqual(extracted_code_file.read(), expected_extracted_code)
 
     def test_extract_lua_error(self):
-        # We actually test p8tool listrawlua
+        # We actually test p8tool listlua
         cartridge_content = """pico-8 cartridge // http://www.pico-8.com
 version 27
 __gfx__

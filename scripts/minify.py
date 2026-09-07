@@ -104,23 +104,14 @@ def extract_lua(source_filepath, lua_file):
     Extract lua from .p8 cartridge at source_filepath (string) to lua_file (file descriptor: write)
 
     """
-    # p8tool listrawlua bug (https://github.com/dansanderson/picotool/issues/59)
-    #   was fixed, so we prefer it to listlua as it is almost instant compared to listlua
-    #   which takes ~1s to parse the game .p8
+    # p8tool listrawlua has a bug in the latest picotool: it calls
+    #   game.Game.get_raw_data_from_p8_file() which no longer exists
+    #   (AttributeError). We use listlua instead, which parses the full
+    #   cart but works correctly.
 
-    # However, note that it outputs an extra newline after *each* line, which will be stripped during minification most of the time
-    # but will stay in [[multi-line strings]]. So we *must* skip every other line (preserve odd lines) using e.g. awk
-    # https://superuser.com/questions/101756/show-only-odd-lines-with-cat
-
-    # Usually a check_call(stdout=min_lua_file) (and no stderr) is enough,
-    #  as it throws CalledProcessError on error by itself, but in this case, due to output stream sync issues
-    #  (luamin error shown before __main__ print at the bottom of this script),
-    #  we prefer Popen + PIPE + communicate() + check stderrdata
-    # For awk we just use a '|' in shell mode, a bit easier than calling Popen a second time with stdin = stdout of first process
-    (_stdoutdata, stderrdata) = Popen([f"p8tool listrawlua \"{source_filepath}\" | awk 'NR % 2 == 1'"], shell=True, stdout=lua_file, stderr=PIPE).communicate()
+    (_stdoutdata, stderrdata) = Popen([f"p8tool listlua \"{source_filepath}\""], shell=True, stdout=lua_file, stderr=PIPE).communicate()
     if stderrdata:
-        logging.error(f"p8tool listrawlua failed with:\n\n{stderrdata.decode()}")
-        print(f"DEBUG p8tool stderr:\n{stderrdata.decode()}", flush=True)
+        logging.error(f"p8tool listlua failed with:\n\n{stderrdata.decode()}")
         sys.exit(1)
 
 
