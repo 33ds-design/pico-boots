@@ -29,6 +29,12 @@ jobs:
       - name: Setup npm dependencies (luamin)
         run: ./setup.sh
 
+      - name: Install picotool
+        run: |
+          wget -q https://github.com/dansanderson/picotool/archive/refs/heads/master.zip -O picotool.zip
+          unzip -q picotool.zip -d tool
+          echo "$PWD/tool/picotool-master" >> $GITHUB_PATH
+
       - name: Run Python toolchain tests
         run: |
           python3 -m scripts.test_add_metadata
