@@ -120,6 +120,7 @@ def extract_lua(source_filepath, lua_file):
     (_stdoutdata, stderrdata) = Popen([f"p8tool listrawlua \"{source_filepath}\" | awk 'NR % 2 == 1'"], shell=True, stdout=lua_file, stderr=PIPE).communicate()
     if stderrdata:
         logging.error(f"p8tool listrawlua failed with:\n\n{stderrdata.decode()}")
+        print(f"DEBUG p8tool stderr:\n{stderrdata.decode()}", flush=True)
         sys.exit(1)
 
 
