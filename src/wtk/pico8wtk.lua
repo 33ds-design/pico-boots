@@ -272,7 +272,6 @@ subwidget(label)
 function label.new(text, c, func)
  local l=widget.new()
  setmetatable(l, label)
- l.h=5
  l.c=c or 0
  if func then
   l.wants_mouse=true
@@ -280,12 +279,34 @@ function label.new(text, c, func)
  end
  if type(text)=="function" then
   l.text=text
-  l.w=max(#(""..text(self))*4-1, 0)
+  local ret=text(l)
+  l.w, l.h = label.compute_size(""..ret)
  else
   l.text=""..text
-  l.w=max(#l.text*4-1, 0)
+  l.w, l.h = label.compute_size(l.text)
  end
  return l
+end
+
+function label.compute_size(text)
+ local text_str = ""..text
+ local lines = 1
+ local max_w = 0
+ local current_w = 0
+ for i = 1, #text_str do
+  local ch = text_str:sub(i, i)
+  if ch == "\n" then
+   lines = lines + 1
+   current_w = 0
+  else
+   current_w = current_w + 1
+   local w = current_w * 4 - 1
+   if w > max_w then max_w = w end
+  end
+ end
+ if max_w < 0 then max_w = 0 end
+ local h = 5 + (lines - 1) * 6
+ return max_w, h
 end
 
 function label:draw(x, y)
