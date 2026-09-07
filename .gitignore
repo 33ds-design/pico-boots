@@ -7,6 +7,9 @@
 # Code coverage report
 *.out
 
+# Test temp files
+/_temp/
+
 # Python
 *.pyc
 

@@ -18,7 +18,9 @@ function get_file_line(extra_level)
   -- if an intermediate function calls get_file_line, we add extra levels to reach the first function of interest (non-helper)
   extra_level = extra_level or 0
   local debug_info = debug.getinfo(2 + extra_level, 'Sl')  -- only need Source and line
-  return debug_info.source..":"..debug_info.currentline
+  -- normalize path separators to '/' for cross-platform compatibility (Windows uses '\')
+  local source = debug_info.source:gsub("\\", "/")
+  return source..":"..debug_info.currentline
 end
 
 function print_at_line(message, extra_level)
