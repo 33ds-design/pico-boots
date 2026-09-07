@@ -272,10 +272,26 @@ describe('serialization', function ()
 
   end)
 
-  describe('#mute parse_trimmed_data_string', function ()
+  describe('parse_expression (trimmed input)', function ()
 
     it('should parse and return a bool: true', function ()
-      assert.are_equal(true, serialization.parse_table_string("true"))
+      assert.are_equal(true, serialization.parse_expression("true"))
+    end)
+
+    it('should parse and return a bool: false', function ()
+      assert.are_equal(false, serialization.parse_expression("false"))
+    end)
+
+    it('should parse and return nil', function ()
+      assert.is_nil(serialization.parse_expression("nil"))
+    end)
+
+    it('should parse and return a number', function ()
+      assert.are_equal(123, serialization.parse_expression("123"))
+    end)
+
+    it('should parse and return a string', function ()
+      assert.are_equal("hello", serialization.parse_expression('"hello"'))
     end)
 
   end)
