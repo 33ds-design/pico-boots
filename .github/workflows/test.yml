@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Lua 5.3
         uses: leafo/gh-actions-lua@v13
@@ -31,10 +31,10 @@ jobs:
 
       - name: Install picotool
         run: |
-          wget -q https://github.com/dansanderson/picotool/archive/refs/heads/master.zip -O picotool.zip
+          wget -q https://github.com/dansanderson/picotool/archive/refs/heads/main.zip -O picotool.zip
           unzip -q picotool.zip -d tool
-          chmod +x tool/picotool-master/p8tool
-          echo "$PWD/tool/picotool-master" >> $GITHUB_PATH
+          chmod +x tool/picotool-main/p8tool
+          echo "$PWD/tool/picotool-main" >> $GITHUB_PATH
 
       - name: Run Python toolchain tests
         run: |
@@ -49,7 +49,7 @@ jobs:
         run: luacov -c config/.luacov_engine
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./luacov.report.out
           fail_ci_if_error: false
