@@ -617,3 +617,69 @@ function color_picker:on_mouse_press()
   if self.func then self.func(self) end
  end
 end
+
+-- vertical_layout (pico-boots extension)
+
+vertical_layout={}
+subwidget(vertical_layout)
+
+function vertical_layout.new(w, c, padding)
+ local vl=widget.new()
+ setmetatable(vl, vertical_layout)
+ vl.w=w
+ vl.h=0
+ vl.c=c
+ vl.padding=padding or 1
+ return vl
+end
+
+function vertical_layout:add_child(c)
+ if #self.children > 0 then
+  self.h = self.h + self.padding
+ end
+ widget.add_child(self, c, 0, self.h)
+ self.h = self.h + c.h
+ if c.w > self.w then
+  self.w = c.w
+ end
+end
+
+function vertical_layout:remove_child(c)
+ widget.remove_child(self, c)
+ del(self.children, c)
+ self.h = 0
+ local first = true
+ for child in all(self.children) do
+  if not first then
+   self.h = self.h + self.padding
+  end
+  first = false
+  child.y = self.h
+  self.h = self.h + child.h
+ end
+end
+
+function vertical_layout:draw(x, y)
+ rectfill(x, y, x+self.w-1, y+self.h-1, self.c)
+end
+
+return {
+ draw_convex_frame = draw_convex_frame,
+ draw_concave_frame = draw_concave_frame,
+ make_label = make_label,
+ subwidget = subwidget,
+ dummy = dummy,
+ widget = widget,
+ gui_root = gui_root,
+ panel = panel,
+ label = label,
+ icon = icon,
+ button = button,
+ spinner = spinner,
+ spinbtn = spinbtn,
+ checkbox = checkbox,
+ rbgroup = rbgroup,
+ radio = radio,
+ color_picker = color_picker,
+ vertical_layout = vertical_layout,
+}
