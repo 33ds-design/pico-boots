@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/hsandt/pico-boots.svg?branch=master)](https://travis-ci.org/hsandt/pico-boots)
-[![codecov](https://codecov.io/gh/hsandt/pico-boots/branch/master/graph/badge.svg)](https://codecov.io/gh/hsandt/pico-boots)
+[![Build Status](https://github.com/33ds-design/pico-boots/actions/workflows/test.yml/badge.svg)](https://github.com/33ds-design/pico-boots/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/33ds-design/pico-boots/branch/master/graph/badge.svg)](https://codecov.io/gh/33ds-design/pico-boots)
 
 # pico-boots
 

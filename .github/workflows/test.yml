@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Lua 5.3
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.3"
+
+      - name: Setup Luarocks
+        uses: leafo/gh-actions-luarocks@v10
+
+      - name: Install Lua test dependencies
+        run: |
+          luarocks install busted
+          luarocks install luacov
+
+      - name: Setup npm dependencies (luamin)
+        run: ./setup.sh
+
+      - name: Run Python toolchain tests
+        run: |
+          python3 -m scripts.test_add_metadata
+          python3 -m scripts.test_add_require
+          python3 -m scripts.test_minify
+
+      - name: Run Lua tests
+        run: ./test.sh -m all
+
+      - name: Generate coverage report
+        run: luacov -c config/.luacov_engine
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./luacov.report.out
+          fail_ci_if_error: false

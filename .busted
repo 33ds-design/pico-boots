@@ -1,0 +1,11 @@
+return {
+  _all = {
+    lpath = "src/?.lua",
+    pattern = "_utest%.lua$",
+    coverage = true,
+    verbose = true,
+  },
+  default = {
+    "src/engine",
+  },
+}

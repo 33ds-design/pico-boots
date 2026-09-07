@@ -1,3 +1,5 @@
+# Deprecated: replaced by .github/workflows/test.yml
+# Kept for historical reference.
 os: linux
 
 language: python # Can use any language here, but if it's not 'python'
