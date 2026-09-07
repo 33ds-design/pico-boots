@@ -59,22 +59,11 @@ text
             self.assertEqual(extracted_code_file.read(), expected_extracted_code)
 
     def test_extract_lua_error(self):
-        # We actually test p8tool listlua
-        cartridge_content = """pico-8 cartridge // http://www.pico-8.com
+        # Test that an invalid cartridge (bad header) triggers an error
+        cartridge_content = """invalid cartridge header
 version 27
-__gfx__
-eeeeeeeee5eeeeeeeeee
-__label__
-55222222222222222222
-__gff__
-00000000000000000000
-__map__
-45454545eeeeeeeeeeee
-__sfx__
-010c00002d340293402d
-__music__
-01 00010203
-
+__lua__
+local a = 5
 """
 
         cartridge_filepath = path.join(self.test_dir, 'cartridge.p8')
