@@ -4,6 +4,9 @@ return {
     "_utest$",            -- needed when testing all (*) modules, as we include whole folders
     "/share/lua/",        -- needed when testing specific module, to avoid homonymous library modules loaded by busted:
                           --   /usr/local/share/lua, $HEREROCKS_PATH/lua5.3/share/lua, etc.
+    "pico8api%.lua$",     -- PICO-8 API simulation layer (test stub code, not production)
+    "headless_itest%.lua$",  -- integration test runner (not production code)
+    "integrationtest%.lua$",  -- integration test framework (not production code)
   }
 
 }
