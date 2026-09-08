@@ -26,6 +26,10 @@ MINIFY_SCRIPT_RELATIVE_PATH = "npm/node_modules/.bin/luamin"
 script_dir_path = os.path.dirname(os.path.realpath(__file__))
 minify_script_path = os.path.join(script_dir_path, MINIFY_SCRIPT_RELATIVE_PATH)
 
+# On Windows, npm scripts have .cmd extension
+if os.name == 'nt' and not os.path.isfile(minify_script_path):
+    minify_script_path = minify_script_path + ".cmd"
+
 LUA_HEADER = b"__lua__\n"
 # Note that this pattern captures 1. condition 2. result of a "one-line if" if it is,
 # but that it also matches a normal if-then, requiring a check before using the pattern.
@@ -153,7 +157,12 @@ def minify_lua(clean_lua_filepath, min_lua_file, use_aggressive_minification=Fal
         options += "mk"
 
     # see extract_lua for reason to use Popen
-    (_stdoutdata, stderrdata) = Popen([minify_script_path, options, clean_lua_filepath], stdout=min_lua_file, stderr=PIPE).communicate()
+    # On Windows, .cmd scripts require shell=True to execute properly
+    if os.name == 'nt':
+        cmd = f'"{minify_script_path}" {options} "{clean_lua_filepath}"'
+        (_stdoutdata, stderrdata) = Popen(cmd, shell=True, stdout=min_lua_file, stderr=PIPE).communicate()
+    else:
+        (_stdoutdata, stderrdata) = Popen([minify_script_path, options, clean_lua_filepath], stdout=min_lua_file, stderr=PIPE).communicate()
     if stderrdata:
         logging.error(f"Minify script failed with:\n\n{stderrdata.decode()}")
         sys.exit(1)

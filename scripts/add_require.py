@@ -100,7 +100,7 @@ def find_relative_module_paths(require_root, relative_dirpath):
                 # unfortunately, os.walk will provide us either the filename or the full root path,
                 # so we need to retrieve the relative path of the file from the dirpath ourselves
                 full_module_path = os.path.join(root, module_name)
-                relative_module_path = os.path.relpath(full_module_path, require_root)
+                relative_module_path = os.path.relpath(full_module_path, require_root).replace(os.sep, '/')
                 module_names.append(relative_module_path)
 
     return module_names
