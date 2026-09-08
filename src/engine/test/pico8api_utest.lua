@@ -19,6 +19,12 @@ describe('pico8api', function ()
       assert.are_same({0, 0}, {pico8.camera_x, pico8.camera_y})
     end)
 
+    it('should replace the camera offset on successive calls (not cumulative)', function ()
+      camera(10, 20)
+      camera(30, 40)
+      assert.are_same({30, 40}, {pico8.camera_x, pico8.camera_y})
+    end)
+
   end)
 
   describe('clip', function ()
@@ -41,6 +47,11 @@ describe('pico8api', function ()
       clip(40, 50, 20, 30)
       local previous_state = {clip()}
       assert.are_same({40, 50, 20, 30}, previous_state)
+    end)
+
+    it('should store out-of-bounds clip values floored without clamping', function ()
+      clip(-10.7, -20.3, 200.8, 150.2)
+      assert.are_same({-11, -21, 200, 150}, pico8.clip)
     end)
 
   end)
@@ -323,6 +334,21 @@ describe('pico8api', function ()
           pico8.pal_transparent)
       end)
 
+      it('should apply a chain of palt calls and reset with pal()', function ()
+        palt(2, true)
+        palt(5, true)
+        palt(0, false)
+        palt(2, false)
+        -- after chain: 0 is opaque, 2 is opaque, 5 is transparent, rest default
+        assert.are_equal(false, pico8.pal_transparent[0])
+        assert.are_equal(false, pico8.pal_transparent[2])
+        assert.are_equal(true, pico8.pal_transparent[5])
+        -- pal() resets all transparency to default
+        pal()
+        assert.are_same({[0] = true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false},
+          pico8.pal_transparent)
+      end)
+
     end)
 
   end)
@@ -503,6 +529,33 @@ describe('pico8api', function ()
         poke4(4, 0x12bc.30b3)
         assert.are_equal(0x12bc.30b3, peek4(4))
         assert.are_same({0x12, 0xbc, 0x30, 0xb3}, {peek(7), peek(6), peek(5), peek(4)})
+      end)
+
+    end)
+
+    describe('peek2', function ()
+
+      it('should return the 16-bit value at the address (little-endian)', function ()
+        assert.are_equal(0x00a2, peek2(4))
+      end)
+
+      it('should return the 16-bit value at the address (high byte non-zero)', function ()
+        assert.are_equal(0xde14, peek2(12))
+      end)
+
+    end)
+
+    describe('poke2', function ()
+
+      it('should set the 16-bit value at the address (little-endian)', function ()
+        poke2(4, 0xb3c5)
+        assert.are_equal(0xb3c5, peek2(4))
+        assert.are_same({0xc5, 0xb3}, {peek(4), peek(5)})
+      end)
+
+      it('should set the 16-bit value with floored input', function ()
+        poke2(4, 0xb3c5.7)
+        assert.are_equal(0xb3c5, peek2(4))
       end)
 
     end)
@@ -1142,6 +1195,38 @@ describe('pico8api', function ()
 
   end)
 
+  describe('split', function ()
+
+    it('should return an empty table for nil', function ()
+      assert.are_same({}, split(nil))
+    end)
+
+    it('should return an empty table for empty string', function ()
+      assert.are_same({}, split(""))
+    end)
+
+    it('should split a string by comma by default', function ()
+      assert.are_same({"a", "b", "c"}, split("a,b,c"))
+    end)
+
+    it('should convert numeric elements by default', function ()
+      assert.are_same({1, 2, 3}, split("1,2,3"))
+    end)
+
+    it('should not convert numeric elements when convert_numbers is false', function ()
+      assert.are_same({"1", "2", "3"}, split("1,2,3", ",", false))
+    end)
+
+    it('should split by a custom separator', function ()
+      assert.are_same({"hello", "world", "pico8"}, split("hello;world;pico8", ";"))
+    end)
+
+    it('should return a single element if no separator found', function ()
+      assert.are_same({"hello"}, split("hello"))
+    end)
+
+  end)
+
   describe('all', function ()
 
     it('should return an iterator function over a sequence', function ()
@@ -1353,7 +1438,8 @@ describe('pico8api', function ()
       end)
 
       it('should append to a file with filepath and false, adding newline at the end', function ()
-        printh("hello1", temp_file_basename, false, temp_dirname)
+        -- start fresh: create dir and write first line with overwrite mode
+        printh("hello1", temp_file_basename, true, temp_dirname)
         printh("hello2", temp_file_basename, false, temp_dirname)
         printh("hello3", temp_file_basename, false, temp_dirname)
 

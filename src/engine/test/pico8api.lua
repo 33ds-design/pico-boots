@@ -3,6 +3,49 @@
 -- "--#if busted" but don't need a require("engine/test/pico8api") (since they will
 -- always be required by a utest script already requiring bustedhelper)
 
+-- === environment differences (simulation vs real PICO-8) ===
+--
+-- 1. numeric precision:
+--    PICO-8 uses 16.16 fixed-point numbers; this simulation uses native Lua floats.
+--    trigonometric functions (cos, sin, atan2) use math.cos/math.sin and may differ
+--    slightly from PICO-8's fixed-point lookup table. tests use almost_eq_with_message
+--    (default eps = 0.01) to account for floating-point variance.
+--    bitwise operations (band, bor, bxor, bnot, shl, shr, etc.) emulate 16.16 behavior
+--    via *0x10000 scaling, but negative value representation still differs from PICO-8.
+--
+-- 2. rendering functions are stubs:
+--    the following functions do not perform any actual drawing; they only update
+--    relevant state (e.g. current color) or are no-ops:
+--    pset, pget (always returns 0), spr, sspr, rect, rectfill, circ, circfill,
+--    line, tline, fillp, map, sget, sset, cursor
+--    clip and camera update state variables but do not actually clip/camera-shift
+--    any rendering output.
+--
+-- 3. memory layout:
+--    PICO-8 has a contiguous 0x8000 byte address space (gfx, map, gfx flags,
+--    music, sfx, etc.). this simulation only tracks explicitly poked addresses
+--    in pico8.poked_addresses and does not model the full memory layout.
+--    sprite flags, map data, and cart data are stored in separate Lua tables
+--    (pico8.spriteflags, pico8.map, pico8.cartdata) rather than in memory.
+--
+-- 4. function status:
+--    implemented: camera, clip, cls, color, pset, pget, tonum, tostr,
+--      rect, rectfill, circ, circfill, line, pal, palt, fillp (no-op),
+--      map (no-op), mget, mset, fget, fset, sget, sset (no-op), spr (no-op),
+--      sspr (no-op), tline (no-op), cursor (no-op),
+--      music, sfx (no-op), peek, poke, peek2, poke2, peek4, poke4,
+--      memcpy, memset, reload (no-op), cstore (no-op),
+--      rnd, srand, flr, ceil, sgn, abs, min, max, mid,
+--      cos, sin, sqrt, atan2,
+--      band, bor, bxor, bnot, shl, shr, lshr, rotl, rotr,
+--      time/t, btn, btnp, cartdata (no-op), dget, dset,
+--      stat, holdframe (no-op), ord, chr, split, sub,
+--      cocreate, coresume, yield, costatus, trace, pack, unpack,
+--      all, foreach, count, add, del, printh, api.print
+--    not implemented / stubs: video/audio rendering output, screen buffer,
+--      pal color replacement (only transparency is simulated),
+--      devkit keyboard input, breadcrumb loading
+
 -- credits
 --
 -- functions taken from gamax92's fork of picolove
@@ -332,6 +375,16 @@ function poke4(addr, val)
   poke(addr+3, (val & 0xff000000) >> 24)
 end
 
+function peek2(addr)
+  return peek(addr) + peek(addr+1)*0x100
+end
+
+function poke2(addr, val)
+  val=flr(val)
+  poke(addr+0, val & 0x00ff)
+  poke(addr+1, (val & 0xff00) >> 8)
+end
+
 function memcpy(dest_addr, source_addr, len)
   if len<1 or dest_addr==source_addr then
     return
@@ -643,6 +696,47 @@ function chr(val)
   -- chr is very close to string.char, but it applies a modulo 256 to val
   -- it also returns "\0" in case of invalid argument, but we consider this UB
   return string.char(val % 256)
+end
+
+function split(str, sep, convert_numbers)
+  if str == nil or str == "" then
+    return {}
+  end
+  if sep == nil then
+    sep = ","
+  end
+  if convert_numbers == nil then
+    convert_numbers = true
+  end
+
+  local t = {}
+  local n = 1
+  local sep_len = #sep
+  local start = 1
+
+  while true do
+    local i = string.find(str, sep, start, true)
+    local elem
+    if i == nil then
+      elem = string.sub(str, start)
+    else
+      elem = string.sub(str, start, i - 1)
+    end
+    if convert_numbers then
+      local num = tonumber(elem)
+      if num ~= nil then
+        elem = num
+      end
+    end
+    t[n] = elem
+    n = n + 1
+    if i == nil then
+      break
+    end
+    start = i + sep_len
+  end
+
+  return t
 end
 
 -- the functions below are very close to the native functions in Lua
