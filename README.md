@@ -343,6 +343,60 @@ To run all unit tests, including those flagged `#mute`:
 
 Enter `test.sh --help` for more information.
 
+#### Windows (PowerShell)
+
+On Windows, you can use the PowerShell test script `test.ps1` (equivalent to `test.sh`):
+
+* Run all unit tests (excluding `#mute`):
+  ```powershell
+  .\test.ps1
+  ```
+* Run tests for a specific engine subfolder:
+  ```powershell
+  .\test.ps1 -Folder core
+  ```
+* Run only tests tagged `#solo`:
+  ```powershell
+  .\test.ps1 -FilterMode solo
+  ```
+* Run all tests including those tagged `#mute`:
+  ```powershell
+  .\test.ps1 -FilterMode all
+  ```
+* Show help:
+  ```powershell
+  .\test.ps1 -Help
+  ```
+
+Alternatively, you can run `busted` directly from the project root:
+
+```powershell
+busted src/engine --lpath="src/?.lua" -p="_utest%.lua$" -v
+```
+
+Make sure `busted` and `luacov` are in your `PATH`.
+
+#### .busted configuration
+
+The project includes a `.busted` configuration file at the root, which is automatically
+picked up by `busted` when running from the project directory. It defines the following settings:
+
+| Key       | Value              | Description                                           |
+|-----------|--------------------|-------------------------------------------------------|
+| `lpath`   | `src/?.lua`        | Lua module search path, so `require` resolves correctly |
+| `pattern` | `_utest%.lua$`     | File pattern for test discovery (files ending with `_utest.lua`) |
+| `coverage`| `true`             | Enable code coverage reporting via `luacov`           |
+| `verbose` | `true`             | Verbose output mode                                   |
+| `default` | `src/engine`       | Default test root directory when no path is given     |
+
+Thanks to this config, you can simply run `busted` from the project root without passing
+`--lpath` or `-p` arguments manually:
+
+```bash
+busted          # uses default path src/engine
+busted src/engine/core   # run tests for a specific subfolder
+```
+
 To run unit tests you wrote for your game, you can also use the test script:
 
 * `cd path/to/your/project`

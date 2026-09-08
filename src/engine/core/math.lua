@@ -103,12 +103,21 @@ function location.__add(lhs, rhs)
 end
 
 
--- vector struct: a pair of pixel coordinates (x, y) that represents a 2d vector
--- in the space (position, displacement, speed, acceleration...)
+--- vector struct: a 2D vector with pixel coordinates (x, y).
+-- Represents a position, displacement, speed, acceleration, or any 2D vector quantity.
+-- Supports arithmetic operations (+, -, *, /), dot product, and equality comparison.
+-- @field x number Horizontal coordinate in pixels.
+-- @field y number Vertical coordinate in pixels.
 vector = new_struct()
 
 -- x       int     horizontal coordinate in pixels
 -- y       int     vertical   coordinate in pixels
+--- Initialize a new vector with x and y coordinates.
+-- @param x number Horizontal coordinate in pixels.
+-- @param y number Vertical coordinate in pixels.
+-- @usage
+-- local v = vector(10, 20)
+-- print(v.x, v.y)  -- 10  20
 function vector:_init(x, y)
   self.x = x
   self.y = y
@@ -214,11 +223,14 @@ function vector:div_inplace(number)
   self:copy_assign(self / number)
 end
 
--- dot product
--- it's a bit advanced for this module and used to be in vector_ext,
---  but allows to compute sqr_magnitude => is_zero => __eq and I'd rather
---  have __eq defined in math than an extension (to avoid core semantic
---  change when requiring new extension)
+--- Compute the dot product of this vector with another vector.
+-- The dot product is the sum of the products of corresponding components.
+-- It is used to compute squared magnitude and check if a vector is zero.
+-- @param other vector The other vector to dot with.
+-- @return number The dot product value (self.x * other.x + self.y * other.y).
+-- @usage
+-- local v = vector(3, 4)
+-- local dot = v:dot(vector(1, 2))  -- 3*1 + 4*2 = 11
 function vector:dot(other)
   return self.x * other.x + self.y * other.y
 end
@@ -279,13 +291,25 @@ horizontal_dir_signs = {
   1                 -- right sign
 }
 
--- return left if signed speed is negative, right if positive. ub unless signed speed is not 0
+--- Convert a signed speed value to a horizontal direction.
+-- Returns `horizontal_dirs.left` if the speed is negative,
+-- `horizontal_dirs.right` if positive. Asserts if speed is zero.
+-- @param signed_speed number The signed speed value (must not be 0).
+-- @return number The horizontal direction constant (left or right).
+-- @usage
+-- local dir = signed_speed_to_dir(-5)  -- horizontal_dirs.left
 function signed_speed_to_dir(signed_speed)
   assert(signed_speed ~= 0)
   return signed_speed < 0 and horizontal_dirs.left or horizontal_dirs.right
 end
 
--- return opposite direction: left <-> right and up <-> down
+--- Return the opposite direction.
+-- Left swaps with right, up swaps with down.
+-- Uses the formula `(direction + 2) % 4` on the `directions` enum.
+-- @param direction number The input direction (from the `directions` enum: 0=left, 1=up, 2=right, 3=down).
+-- @return number The opposite direction value.
+-- @usage
+-- local opposite = oppose_dir(directions.left)  -- directions.right
 function oppose_dir(direction)
   return (direction + 2) % 4
 end

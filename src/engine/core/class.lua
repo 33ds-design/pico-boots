@@ -95,21 +95,17 @@ local function copy_assign(self, from)
   end
 end
 
---[[
-Create and return a new class
-
-Every class should implement
-  - `:_init()`,
-  - if useful for logging, `:_tostring()`
-  - if relevant, `.__eq()`
-
-Note that most .__eq() definitions are only duck-typing lhs and rhs,
-  so we can compare two instances of different classes (maybe related by inheritance)
-  with the same members. slicing will occur when comparing a base instance
-  and a derived instance with more members. add a class type member to simulate RTTI
-  and make sure only objects of the same class are considered equal (but we often don't need this)
-We recommend using a struct for simple structures, as they implement __eq automatically.
---]]
+--- Create and return a new class.
+-- Every class should implement `:_init()`, and optionally `:_tostring()` for logging
+-- and `.__eq()` for equality comparison. Instances are created by calling the class
+-- table like a function, e.g. `local obj = MyClass(args)`.
+-- @return table The new class table (metatable for instances).
+-- @usage
+-- local MyClass = new_class()
+-- function MyClass:_init(name)
+--   self.name = name
+-- end
+-- local obj = MyClass("hello")
 function new_class()
   local class = {}
   class.__index = class  -- 1st class as instance metatable
@@ -147,7 +143,19 @@ function derived_class(base_class)
   return class
 end
 
--- create a new struct, which is like a class with member-wise equality
+--- Create and return a new struct.
+-- A struct is like a class with member-wise equality (`__eq`) and built-in
+-- `copy` / `copy_assign` methods. Structs are ideal for simple value objects
+-- such as vectors, positions, or data records.
+-- @return table The new struct table (metatable for instances).
+-- @usage
+-- local Point = new_struct()
+-- function Point:_init(x, y)
+--   self.x = x
+--   self.y = y
+-- end
+-- local p1 = Point(1, 2)
+-- local p2 = p1:copy()
 function new_struct()
   local struct = {}
   struct.__index = struct  -- 1st struct as instance metatable
@@ -176,8 +184,17 @@ function derived_struct(base_struct)
   return derived
 end
 
--- create a new singleton from an init method, which can also be used as reset method in unit tests
--- the singleton is at the same time a class and its own instance
+--- Create a new singleton from an init method.
+-- The singleton is at the same time a class and its own instance. The `init`
+-- method is called immediately during construction, and can also be used as a
+-- reset method in unit tests.
+-- @param init function The initialization method to set on the singleton.
+-- @return table The singleton instance.
+-- @usage
+-- local my_singleton = singleton(function(self)
+--   self.count = 0
+-- end)
+-- print(my_singleton.count)  -- 0
 function singleton(init)
   local s = {}
   setmetatable(s, {
