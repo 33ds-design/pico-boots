@@ -279,6 +279,23 @@ describe('gameapp', function ()
             s.was_called_with(match.ref(app))
           end)
 
+          it('should call on_pre_start before on_post_start', function ()
+            local call_order = {}
+
+            -- override on_pre_start to track call order
+            function app:on_pre_start()
+              add(call_order, "on_pre_start")
+            end
+            -- override on_post_start to track call order
+            function app:on_post_start()
+              add(call_order, "on_post_start")
+            end
+
+            app:start()
+
+            assert.are_same({"on_pre_start", "on_post_start"}, call_order)
+          end)
+
         end)  -- (initial gamestate set to "dummy")
 
       end)
@@ -469,6 +486,95 @@ describe('gameapp', function ()
 
       end)
 
+      describe('lifecycle (start -> update -> draw)', function ()
+
+        setup(function ()
+          -- stub start dependencies
+          spy.on(gameapp, "instantiate_and_register_managers")
+          spy.on(gameapp, "instantiate_and_register_gamestates")
+          stub(flow, "query_gamestate_type")
+          -- stub update dependencies
+          stub(input, "process_players_inputs")
+          stub(coroutine_runner, "update_coroutines")
+          stub(flow, "update")
+          spy.on(gameapp, "on_update")
+          -- stub draw dependencies
+          stub(_G, "cls")
+          stub(flow, "render")
+          stub(flow, "render_post")
+        end)
+
+        teardown(function ()
+          gameapp.instantiate_and_register_managers:revert()
+          gameapp.instantiate_and_register_gamestates:revert()
+          flow.query_gamestate_type:revert()
+          input.process_players_inputs:revert()
+          coroutine_runner.update_coroutines:revert()
+          flow.update:revert()
+          gameapp.on_update:revert()
+          cls:revert()
+          flow.render:revert()
+          flow.render_post:revert()
+        end)
+
+        before_each(function ()
+          app.initial_gamestate = "dummy"
+        end)
+
+        after_each(function ()
+          gameapp.instantiate_and_register_managers:clear()
+          gameapp.instantiate_and_register_gamestates:clear()
+          flow.query_gamestate_type:clear()
+          input.process_players_inputs:clear()
+          coroutine_runner.update_coroutines:clear()
+          flow.update:clear()
+          gameapp.on_update:clear()
+          cls:clear()
+          flow.render:clear()
+          flow.render_post:clear()
+
+          mock_manager1.start:clear()
+          mock_manager1.update:clear()
+          mock_manager1.render:clear()
+          mock_manager2.start:clear()
+          mock_manager2.update:clear()
+          mock_manager2.render:clear()
+        end)
+
+        it('should complete a full lifecycle frame with correct call counts', function ()
+          app:start()
+
+          -- after start: managers should be started once
+          assert.spy(mock_manager1.start).was_called(1)
+          assert.spy(mock_manager2.start).was_called(1)
+
+          -- run 3 update + draw cycles
+          for i = 1, 3 do
+            app:update()
+            app:draw()
+          end
+
+          -- update should have been called 3 times for active manager
+          assert.spy(mock_manager1.update).was_called(3)
+          -- update should not be called for inactive manager
+          assert.spy(mock_manager2.update).was_not_called()
+
+          -- render should have been called 3 times for active manager
+          assert.spy(mock_manager1.render).was_called(3)
+          -- render should not be called for inactive manager
+          assert.spy(mock_manager2.render).was_not_called()
+
+          -- flow update and render should each be called 3 times
+          assert.spy(flow.update).was_called(3)
+          assert.spy(flow.render).was_called(3)
+          assert.spy(flow.render_post).was_called(3)
+
+          -- on_update should have been called 3 times
+          assert.spy(gameapp.on_update).was_called(3)
+        end)
+
+      end)  -- lifecycle
+
     end)  -- (with mock_manager1 and mock_manager2 registered)
 
     describe('start_coroutine', function ()
@@ -519,6 +625,48 @@ describe('gameapp', function ()
 
     end)
 
+    describe('stop_all_coroutines (with real coroutines)', function ()
+
+      local function long_running_async()
+        yield_delay(60)
+      end
+
+      after_each(function ()
+        app:stop_all_coroutines()
+      end)
+
+      it('should clear all running coroutines', function ()
+        app:start_coroutine(long_running_async)
+        app:start_coroutine(long_running_async)
+
+        assert.are_equal(2, #app.coroutine_runner.coroutine_curries)
+
+        app:stop_all_coroutines()
+
+        assert.are_equal(0, #app.coroutine_runner.coroutine_curries)
+      end)
+
+      it('should prevent further updates from resuming stopped coroutines', function ()
+        local test_var = 0
+        local function set_var_async()
+          yield_delay(10)
+          test_var = 1
+        end
+
+        app:start_coroutine(set_var_async)
+        assert.are_equal(1, #app.coroutine_runner.coroutine_curries)
+
+        app:stop_all_coroutines()
+        assert.are_equal(0, #app.coroutine_runner.coroutine_curries)
+
+        -- updating after stop should not resume any coroutines
+        app.coroutine_runner:update_coroutines()
+        assert.are_equal(0, #app.coroutine_runner.coroutine_curries)
+        assert.are_equal(0, test_var)
+      end)
+
+    end)
+
     describe('yield_delay_s', function ()
 
       -- we won't even try calling on_enter, etc. so empty tables are enough
@@ -556,7 +704,63 @@ describe('gameapp', function ()
     end)
 
     describe('wait_and_do', function ()
-      --todo
+
+      local callback_spy
+      local test_var = 0
+
+      setup(function ()
+        stub(input, "process_players_inputs")
+        stub(flow, "update")
+      end)
+
+      teardown(function ()
+        input.process_players_inputs:revert()
+        flow.update:revert()
+      end)
+
+      before_each(function ()
+        test_var = 0
+        callback_spy = spy.new(function (val)
+          test_var = val or 1
+        end)
+      end)
+
+      after_each(function ()
+        input.process_players_inputs:clear()
+        flow.update:clear()
+        app:stop_all_coroutines()
+      end)
+
+      it('should call callback after waiting the specified duration in seconds', function ()
+        -- 30 fps, so 1 second = 30 frames
+        -- yield_delay(30) does 29 yields, and coroutine starts suspended (not run on start),
+        -- so we need 30 updates to complete the delay and fire the callback
+        app:wait_and_do(1, callback_spy, 42)
+
+        -- after 29 updates, callback not yet called
+        for t = 1, 29 do
+          app:update()
+        end
+        assert.spy(callback_spy).was_not_called()
+        assert.are_equal(0, test_var)
+
+        -- after 30 updates, callback is called with the passed argument
+        app:update()
+        assert.spy(callback_spy).was_called(1)
+        assert.spy(callback_spy).was_called_with(42)
+        assert.are_equal(42, test_var)
+      end)
+
+      it('should call callback almost immediately for very short delay (ceil to 1 frame)', function ()
+        -- 0.01s at 30fps = 0.3 frames, ceiled to 1 frame
+        -- yield_delay(1) does 0 yields (for frame = 1, 0 do end),
+        -- so coroutine finishes on the very first update
+        app:wait_and_do(0.01, callback_spy)
+
+        app:update()
+        assert.spy(callback_spy).was_called(1)
+      end)
+
     end)
 
   end)  -- (with default app)

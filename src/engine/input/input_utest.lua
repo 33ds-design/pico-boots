@@ -612,4 +612,62 @@ describe('(mouse toggled)', function ()
 
   end)
 
+  describe('(boundary) is_just_pressed called multiple times in same frame', function ()
+
+    before_each(function ()
+      input.players_btn_states[0][button_ids.left] = btn_states.just_pressed
+    end)
+
+    after_each(function ()
+      input:init()
+    end)
+
+    it('should return true every time and not change the button state', function ()
+      assert.is_true(input:is_just_pressed(button_ids.left))
+      assert.is_true(input:is_just_pressed(button_ids.left))
+      assert.is_true(input:is_just_pressed(button_ids.left))
+      -- state should still be just_pressed after multiple calls
+      assert.are_equal(btn_states.just_pressed, input.players_btn_states[0][button_ids.left])
+    end)
+
+  end)
+
+  describe('(boundary) is_just_released on a button that was never pressed', function ()
+
+    it('should return false when button is in released state (never pressed)', function ()
+      -- initial state is released for all buttons
+      assert.is_false(input:is_just_released(button_ids.left))
+      assert.is_false(input:is_just_released(button_ids.left, 1))
+    end)
+
+  end)
+
+  describe('(boundary) multi-player input independence', function ()
+
+    before_each(function ()
+      input.mode = input_modes.simulated
+    end)
+
+    after_each(function ()
+      input:init()
+    end)
+
+    it('should not affect player 1 state when processing player 0 input', function ()
+      -- set player 1 button to a known state
+      input.players_btn_states[1][button_ids.left] = btn_states.released
+      input.simulated_buttons_down[1][button_ids.left] = false
+
+      -- set player 0 button and process input
+      input.players_btn_states[0][button_ids.left] = btn_states.released
+      input.simulated_buttons_down[0][button_ids.left] = true
+      input:_process_player_inputs(0)
+
+      -- player 0 should now be just_pressed
+      assert.are_equal(btn_states.just_pressed, input.players_btn_states[0][button_ids.left])
+      -- player 1 should still be released (unchanged)
+      assert.are_equal(btn_states.released, input.players_btn_states[1][button_ids.left])
+    end)
+
+  end)
+
 end)

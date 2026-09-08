@@ -444,3 +444,160 @@ describe('derived_singleton', function ()
   end)
 
 end)
+
+describe('three-level inheritance chain', function ()
+
+  local grandparent_class = new_class()
+
+  function grandparent_class:_init(value)
+    self.value = value
+  end
+
+  function grandparent_class:get_value()
+    return self.value
+  end
+
+  function grandparent_class:get_description()
+    return "grandparent"
+  end
+
+  function grandparent_class:_tostring()
+    return "grandparent:"..tostr(self.value)
+  end
+
+  local parent_class = derived_class(grandparent_class)
+
+  function parent_class:_init(value, value2)
+    grandparent_class._init(self, value)
+    self.value2 = value2
+  end
+
+  function parent_class:get_value()
+    return self.value + self.value2
+  end
+
+  function parent_class:_tostring()
+    return "parent:"..tostr(self.value)..","..tostr(self.value2)
+  end
+
+  local child_class = derived_class(parent_class)
+
+  function child_class:_init(value, value2, value3)
+    parent_class._init(self, value, value2)
+    self.value3 = value3
+  end
+
+  -- child does NOT override get_value or _tostring,
+  --   so it should use parent's versions via inheritance chain
+
+  it('should find methods from grandparent via parent in the chain', function ()
+    local child = child_class(1, 2, 3)
+    -- get_description is only defined on grandparent, should be found via chain
+    assert.are_equal("grandparent", child:get_description())
+  end)
+
+  it('should use the most derived override in the chain (parent overrides grandparent)', function ()
+    local child = child_class(1, 2, 3)
+    -- get_value is overridden in parent, child should use parent's version
+    assert.are_equal(3, child:get_value())
+  end)
+
+  it('should use the most derived _tostring in the inheritance chain', function ()
+    local child = child_class(5, 10, 15)
+    -- child has no _tostring, parent overrides grandparent's _tostring
+    --  so child should use parent's _tostring via inheritance chain
+    assert.are_equal("parent:5,10", child:_tostring())
+  end)
+
+end)
+
+describe('derived_singleton repeated init', function ()
+
+  local base_s = singleton(function (self)
+    self.counter = 0
+    self.data = { x = 1 }
+  end)
+
+  function base_s:increment()
+    self.counter = self.counter + 1
+  end
+
+  local derived_s = derived_singleton(base_s, function (self)
+    self.name = "derived"
+  end)
+
+  before_each(function ()
+    derived_s:init()
+  end)
+
+  it('should reinitialize state when init is called multiple times (no guard)', function ()
+    -- modify state
+    derived_s:increment()
+    derived_s.name = "changed"
+    derived_s.data.x = 99
+    assert.are_equal(1, derived_s.counter)
+    assert.are_equal("changed", derived_s.name)
+    assert.are_equal(99, derived_s.data.x)
+
+    -- call init again to reinitialize
+    derived_s:init()
+
+    -- state should be reset to initial values
+    assert.are_equal(0, derived_s.counter)
+    assert.are_equal("derived", derived_s.name)
+    assert.are_equal(1, derived_s.data.x)
+  end)
+
+  it('should not share state with base singleton after reinit', function ()
+    -- modify derived singleton state
+    derived_s.data.x = 42
+    -- base singleton should be unaffected (derived has its own copy)
+    assert.are_equal(1, base_s.data.x)
+
+    -- reinit derived singleton
+    derived_s:init()
+
+    -- derived state reset, base still unaffected
+    assert.are_equal(1, derived_s.data.x)
+    assert.are_equal(1, base_s.data.x)
+  end)
+
+end)
+
+describe('struct copy with nested non-struct tables', function ()
+
+  local plain_table_struct = new_struct()
+
+  function plain_table_struct:_init(v)
+    self.value = v
+    self.data = { nested = v * 2 }  -- plain table, not a struct
+  end
+
+  function plain_table_struct:_tostring()
+    return "plain_table_struct:"..tostr(self.value)
+  end
+
+  describe('copy', function ()
+
+    it('should error when copying a struct that contains a non-struct table (assert mode)', function ()
+      local s = plain_table_struct(5)
+      assert.has_error(function ()
+        s:copy()
+      end, "value {nested = 10} is a table member of a struct but it doesn't have expected copy method, so it's not a struct itself")
+    end)
+
+  end)
+
+  describe('copy_assign', function ()
+
+    it('should error when copy_assign encounters a non-struct table member', function ()
+      local from = plain_table_struct(5)
+      local to = plain_table_struct(10)
+      assert.has_error(function ()
+        to:copy_assign(from)
+      end, "value [table] is a table member of a struct but it doesn't have expected copy_assign method, so it's not a struct itself")
+    end)
+
+  end)
+
+end)

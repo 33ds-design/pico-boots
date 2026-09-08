@@ -125,6 +125,21 @@ describe('animated_sprite', function ()
       assert.are_equal(2.3, anim_spr.play_speed_frame)
     end)
 
+    it('(after freeze_first ended) should restart from first frame when calling play with from_start true', function ()
+      -- simulate a freeze_first animation that has reached the end
+      local anim_spr = animated_sprite(anim_spr_data_table)
+      anim_spr.playing = false
+      anim_spr.current_anim_key = "freeze_first"
+      anim_spr.current_step = 1
+      anim_spr.local_frame = 0
+      anim_spr.play_speed_frame = 1
+
+      anim_spr:play("freeze_first", true)
+
+      assert.are_same({true, "freeze_first", 1, 0},
+        {anim_spr.playing, anim_spr.current_anim_key, anim_spr.current_step, anim_spr.local_frame})
+    end)
+
   end)
 
   describe('stop', function ()
@@ -138,6 +153,21 @@ describe('animated_sprite', function ()
       anim_spr.local_frame = 5
 
       anim_spr:stop()
+
+      assert.are_same({false, nil, 1, 0},
+        {anim_spr.playing, anim_spr.current_anim_key, anim_spr.current_step, anim_spr.local_frame})
+    end)
+
+    it('should not change state on update after stop', function ()
+      local anim_spr = animated_sprite(anim_spr_data_table)
+      anim_spr.playing = true
+      anim_spr.play_speed_frame = 1
+      anim_spr.current_anim_key = "freeze_first"
+      anim_spr.current_step = 2
+      anim_spr.local_frame = 5
+
+      anim_spr:stop()
+      anim_spr:update()
 
       assert.are_same({false, nil, 1, 0},
         {anim_spr.playing, anim_spr.current_anim_key, anim_spr.current_step, anim_spr.local_frame})
@@ -317,6 +347,36 @@ describe('animated_sprite', function ()
 
       assert.are_same({false, nil, 1, 0},
         {anim_spr.playing, anim_spr.current_anim_key, anim_spr.current_step, anim_spr.local_frame})
+    end)
+
+    it('should not advance frame when play speed is 0 (paused playback)', function ()
+      local anim_spr = animated_sprite(anim_spr_data_table)
+      anim_spr.playing = true
+      anim_spr.play_speed_frame = 0
+      anim_spr.current_anim_key = "loop"
+      anim_spr.current_step = 2
+      anim_spr.local_frame = 5
+
+      anim_spr:update()
+
+      assert.are_same({true, 2, 5},
+        {anim_spr.playing, anim_spr.current_step, anim_spr.local_frame})
+    end)
+
+    it('should not reverse with negative speed (local_frame decreases but step does not change)', function ()
+      -- source comment says "fractional playback speed is supported, but not negative playback"
+      -- verify current actual behavior: local_frame goes negative but no step decrement
+      local anim_spr = animated_sprite(anim_spr_data_table)
+      anim_spr.playing = true
+      anim_spr.play_speed_frame = -1
+      anim_spr.current_anim_key = "loop"
+      anim_spr.current_step = 2
+      anim_spr.local_frame = 5
+
+      anim_spr:update()
+
+      assert.are_same({true, 2, 4},
+        {anim_spr.playing, anim_spr.current_step, anim_spr.local_frame})
     end)
 
   end)

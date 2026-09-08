@@ -671,6 +671,58 @@ describe('collision', function ()
         )
       end)
 
+      -- Degenerate / boundary cases (Step 6.2)
+
+      describe('+ Case D1a: Perfect square overlap degenerate, priority left', function ()
+
+        describe_all_test_variants(
+          aabb(vector(0., 0.), vector(2., 2.)),
+          aabb(vector(0., 0.), vector(2., 2.)),
+          vector(-4., 0.),
+          false,
+          true,
+          directions.left
+        )
+      end)
+
+      describe('+ Case D1b: Perfect square overlap degenerate, priority up', function ()
+
+        describe_all_test_variants(
+          aabb(vector(0., 0.), vector(2., 2.)),
+          aabb(vector(0., 0.), vector(2., 2.)),
+          vector(0., -4.),
+          false,
+          true,
+          directions.up
+        )
+      end)
+
+      describe('Case D2: Full containment off-center', function ()
+
+        -- inner box fully inside outer box, not touching any side,
+        -- with a unique shortest escape direction (down)
+        describe_all_test_variants(
+          aabb(vector(-1., 0.5), vector(1., 1.)),
+          aabb(vector(0., 0.), vector(5., 3.)),
+          vector(0., 3.5),
+          false,
+          true
+        )
+      end)
+
+      describe('Case D3: Zero-thickness AABB touches edge', function ()
+
+        -- a vertical line (0 x-extent) exactly touching the left edge of another box
+        -- verifies touches returns true at the precise boundary of a degenerate geometry
+        describe_all_test_variants(
+          aabb(vector(0., 0.), vector(0., 1.)),
+          aabb(vector(1., 0.), vector(1., 2.)),
+          nil,
+          true,
+          true
+        )
+      end)
+
     end)
 
   end)

@@ -296,6 +296,28 @@ describe('serialization', function ()
 
   end)
 
+  describe('parse_expression (boundary cases)', function ()
+
+    it('should fail parsing an empty string', function ()
+      assert.has_error(function ()
+        serialization.parse_expression("")
+      end)
+    end)
+
+    it('should parse and return an empty table', function ()
+      assert.are_same({}, serialization.parse_expression("{}"))
+    end)
+
+    it('should parse and return nested tables as a sequence', function ()
+      assert.are_same({{1, 2}, {3, 4}}, serialization.parse_expression("{{1, 2}, {3, 4}}"))
+    end)
+
+    it('should parse a double-quoted string containing single quotes', function ()
+      assert.are_equal("it's a test", serialization.parse_expression('"it\'s a test"'))
+    end)
+
+  end)
+
   describe('find_char', function ()
 
     it('(positive search) should find the index of the first char in chars starting at from_index', function ()

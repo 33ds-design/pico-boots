@@ -844,6 +844,122 @@ describe('logging', function ()
 
     end)
 
+    describe('multi-stream dispatch', function ()
+
+      local printh_stub
+
+      setup(function ()
+        printh_stub = stub(_G, "printh")
+      end)
+
+      teardown(function ()
+        printh_stub:revert()
+      end)
+
+      before_each(function ()
+        logger.active_categories['default'] = true
+        logger:register_stream(console_log_stream)
+        logger:register_stream(file_log_stream)
+      end)
+
+      after_each(function ()
+        file_log_stream:init()
+        printh_stub:clear()
+      end)
+
+      it('should dispatch a single log message to both console and file streams', function ()
+        log("hello multi-stream")
+
+        -- console stream calls printh with 1 arg, file stream with 2 args
+        assert.spy(printh_stub).was_called(2)
+        assert.spy(printh_stub).was_called_with("[default] hello multi-stream")
+        assert.spy(printh_stub).was_called_with("[default] hello multi-stream", "game_log")
+      end)
+
+    end)
+
+    describe('deactivate_all_categories and reactivation', function ()
+
+      local printh_stub
+
+      setup(function ()
+        printh_stub = stub(_G, "printh")
+      end)
+
+      teardown(function ()
+        printh_stub:revert()
+      end)
+
+      before_each(function ()
+        logger:register_stream(console_log_stream)
+        logger.current_level = logging.level.info
+      end)
+
+      after_each(function ()
+        printh_stub:clear()
+      end)
+
+      it('should silence all output after deactivate_all_categories and only output reactivated category', function ()
+        -- phase 1: default category is active, logging works
+        log("before deactivate")
+        assert.spy(printh_stub).was_called(1)
+        printh_stub:clear()
+
+        -- phase 2: deactivate all categories, no output
+        logger:deactivate_all_categories()
+        log("after deactivate", 'default')
+        log("after deactivate", 'flow')
+        assert.spy(printh_stub).was_not_called()
+
+        -- phase 3: reactivate only flow category
+        logger.active_categories['flow'] = true
+        log("reactivated flow", 'flow')
+        log("still inactive default", 'default')
+        assert.spy(printh_stub).was_called(1)
+        assert.spy(printh_stub).was_called_with("[flow] reactivated flow")
+      end)
+
+    end)
+
+    describe('level filtering boundary', function ()
+
+      local printh_stub
+
+      setup(function ()
+        printh_stub = stub(_G, "printh")
+      end)
+
+      teardown(function ()
+        printh_stub:revert()
+      end)
+
+      before_each(function ()
+        logger.active_categories['default'] = true
+        logger:register_stream(console_log_stream)
+      end)
+
+      after_each(function ()
+        printh_stub:clear()
+      end)
+
+      it('should output message when level exactly equals threshold and suppress below', function ()
+        -- set threshold to warning (level 2)
+        logger.current_level = logging.level.warning
+
+        -- warning level (2) == threshold → should output
+        warn("exact warning threshold")
+        assert.spy(printh_stub).was_called(1)
+        assert.spy(printh_stub).was_called_with("[default] warning: exact warning threshold")
+
+        printh_stub:clear()
+
+        -- info level (1) < threshold → should not output
+        log("below warning threshold")
+        assert.spy(printh_stub).was_not_called()
+      end)
+
+    end)
+
   end)  -- logger
 
 end)
